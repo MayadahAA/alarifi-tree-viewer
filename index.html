@@ -1,0 +1,1316 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>مستعرض شجرة العرافا</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#F7F3E8; --surface:#FFFDF7; --sunk:#F1EBDC; --canvasbg:#EFE9DA;
+  --ink:#221E18; --muted:#6E6357; --line:#E2DACA; --line2:#BCB09A;
+  --bark:#6B4327; --gold:#8A6122; --gold-soft:#E7D7AE;
+  --b0:#C8A23A; --b1:#C4602A; --b2:#2F7D4F; --b3:#B03A36;
+  --s0:#00681F; --s1:#C6DB4E; --s2:#F4E18F; --s3:#AA4198; --s4:#46489E; --s5:#898585;
+  --halo:#FFFDF6; --ring:#1B1711; --pa:#1F6FA8; --pb:#A8327C;
+  /* ألوان الخريطة ثابتة في الوضعين: الشجرة فاتحة دائمًا */
+  --maphalo:#F7EFDC; --maptext:#1B1711; --mapring:#1B1711;
+  --mapgold:#6B4A12; --mapa:#14567F; --mapb:#8A2566;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141210; --surface:#1D1A15; --sunk:#232019; --canvasbg:#201C16;
+    --ink:#EFE8D8; --muted:#A1957F; --line:#332C22; --line2:#463C2D;
+    --bark:#A9754B; --gold:#D9B45B; --gold-soft:#4A3C22;
+    --b0:#D9B550; --b1:#E0763C; --b2:#4FA473; --b3:#D45A54;
+    --halo:#15120E; --ring:#F5EEDC; --pa:#5BA9DC; --pb:#E070B4;
+    --s0:#3FA855; --s3:#D273BE; --s4:#8A8DE0; --s5:#B0ACA8;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141210; --surface:#1D1A15; --sunk:#232019; --canvasbg:#201C16;
+  --ink:#EFE8D8; --muted:#A1957F; --line:#332C22; --line2:#463C2D;
+  --bark:#A9754B; --gold:#D9B45B; --gold-soft:#4A3C22;
+  --b0:#D9B550; --b1:#E0763C; --b2:#4FA473; --b3:#D45A54;
+  --halo:#15120E; --ring:#F5EEDC; --pa:#5BA9DC; --pb:#E070B4;
+  --s0:#3FA855; --s3:#D273BE; --s4:#8A8DE0; --s5:#B0ACA8;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0; background:var(--paper); color:var(--ink); direction:rtl; overflow:hidden;
+  font-family:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif; font-size:15px; line-height:1.65}
+.app{height:100%; display:flex; flex-direction:column}
+
+.bar{flex:0 0 auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  padding:10px 16px; background:var(--surface); border-bottom:1px solid var(--line)}
+.brand{font-family:Amiri,serif; font-weight:700; font-size:21px; white-space:nowrap}
+.brand small{font-family:"IBM Plex Sans Arabic",sans-serif; font-weight:400; font-size:11px;
+  color:var(--gold); letter-spacing:.14em; display:block; line-height:1.2}
+.credit{flex:0 0 auto; display:block; width:100%; text-align:center; cursor:pointer;
+  font-family:Amiri,serif; font-size:13px; font-weight:700; line-height:1.2;
+  color:var(--gold); background:var(--gold-soft); border:0;
+  border-bottom:1px solid var(--gold); padding:7px 12px;
+  transition:background .15s, color .15s}
+.credit:hover{background:var(--gold); color:var(--paper)}
+@media(max-width:820px){ .credit{font-size:12px; padding:6px 10px} }
+.searchwrap{position:relative; flex:1 1 300px; min-width:180px}
+input[type=search]{width:100%; padding:9px 13px; font:inherit; color:var(--ink);
+  background:var(--sunk); border:1px solid var(--line2); border-radius:8px}
+.searchwrap.hasHits input[type=search]{padding-inline-end:104px}
+input[type=search]:focus-visible, button:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+.hitcount{position:absolute; inset-inline-end:38px; top:50%; transform:translateY(-50%); pointer-events:none;
+  font-size:11.5px; color:var(--muted); background:var(--sunk); padding:0 4px; pointer-events:none}
+button{font:inherit; color:var(--ink); cursor:pointer}
+.seg{display:inline-flex; border:1px solid var(--line2); border-radius:8px; overflow:hidden}
+.seg button{border:0; background:var(--surface); padding:8px 12px; font-size:13px; white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--bark); color:var(--onbark)}
+:root{--onbark:#FFF8EA}
+:root[data-theme="dark"]{--onbark:#1B1711}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--onbark:#1B1711}}
+.ico{background:var(--surface); border:1px solid var(--line2); border-radius:8px; width:36px; height:36px;
+  font-size:17px; line-height:1; display:inline-flex; align-items:center; justify-content:center}
+.ico:hover{border-color:var(--gold)}
+
+.scrim{position:fixed; inset:0; background:rgba(20,16,10,.42); z-index:20}
+.drawer{position:fixed; inset-block:0; inset-inline-start:0; width:min(330px,86vw); z-index:21;
+  background:var(--surface); border-inline-end:1px solid var(--line); padding:14px 14px 28px;
+  overflow:auto; box-shadow:0 0 40px rgba(0,0,0,.18);
+  outline:1px solid var(--line2); outline-offset:-1px;
+  padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.dhead{display:flex; align-items:center; gap:8px; margin:0 0 10px}
+.dhead span{font-size:11.5px; letter-spacing:.1em; color:var(--gold); font-weight:600}
+.dhead .ico{margin-inline-start:auto; width:32px; height:32px; font-size:20px}
+.dbig{display:block; width:100%; text-align:start; font:inherit; margin-bottom:8px;
+  background:var(--sunk); border:1px solid var(--line2); border-radius:11px; padding:12px 14px}
+.dbig:hover{border-color:var(--gold)}
+.dbig[aria-pressed="true"]{background:var(--gold-soft); border-color:var(--gold)}
+.dbig b{display:block; font-family:Amiri,serif; font-size:19px; font-weight:700}
+.dbig span{display:block; font-size:12px; color:var(--muted); margin-top:2px; line-height:1.6}
+.dlist{display:flex; align-items:center; gap:8px; width:100%; text-align:start; font:inherit;
+  background:none; border:0; border-bottom:1px solid var(--line); padding:11px 6px;
+  font-family:Amiri,serif; font-size:17px}
+.dlist:hover{background:var(--sunk)}
+.dlist[aria-pressed="true"]{color:var(--gold)}
+.dlist i{margin-inline-start:auto; font-style:normal; font-size:12px; color:var(--muted);
+  font-family:"IBM Plex Sans Arabic",sans-serif}
+.dfoot{margin-top:18px; font-size:11.5px; color:var(--muted); text-align:center}
+.src{margin-top:20px; border-top:1px solid var(--line); padding-top:12px;
+  font-size:11.5px; line-height:1.85; color:var(--muted)}
+.src h4{margin:0 0 6px; font-size:11.5px; letter-spacing:.1em; color:var(--gold); font-weight:600}
+.src b{color:var(--ink); font-weight:600}
+.src p{margin:8px 0 0}
+.body{flex:1 1 auto; display:flex; min-height:0}
+.searchslot{display:none}
+.stage{flex:1 1 auto; display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--canvasbg)}
+.cwrap{flex:1 1 auto; position:relative; min-height:0}
+canvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab}
+canvas.drag{cursor:grabbing}
+.hud{position:absolute; inset-inline-start:12px; bottom:12px; display:flex; gap:6px; flex-direction:column; align-items:flex-start}
+.zoomctl{display:flex; gap:6px}
+.tag{background:var(--surface); border:1px solid var(--line2); border-radius:7px; padding:4px 9px;
+  font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums}
+.crumbs{flex:0 0 auto; display:flex; gap:5px; align-items:center; flex-wrap:nowrap;
+  overflow-x:auto; overflow-y:hidden; padding:7px 10px; background:var(--surface);
+  border-bottom:1px solid var(--line); scrollbar-width:thin}
+.crumbs:empty{display:none}
+.crumbs button{flex:0 0 auto; background:var(--sunk); border:1px solid var(--line2);
+  border-radius:99px; padding:3px 11px; font-family:Amiri,serif; font-size:15px; white-space:nowrap}
+.crumbs button:hover{border-color:var(--gold)}
+.crumbs span{color:var(--muted); font-size:11px}
+
+.side{flex:0 0 360px; border-inline-start:1px solid var(--line); background:var(--surface);
+  overflow:auto; padding:14px}
+@media(max-width:820px){
+  body{overflow:auto}
+  .app{height:auto; min-height:100%}
+  .body{display:block}
+  .stage{height:62vh; height:62dvh; min-height:340px}
+  .side{border-inline-start:0; border-top:1px solid var(--line); overflow:visible; padding:14px 16px 40px}
+  .bar{padding:8px 12px; gap:8px}
+  .brand{font-size:17px}
+  .brand small{letter-spacing:.06em}
+  .searchwrap{flex:1 1 100%; order:3}
+  .searchslot{display:block; position:sticky; top:0; z-index:8; padding:8px 12px;
+    background:var(--surface); border-bottom:1px solid var(--line);
+    box-shadow:0 2px 10px rgba(0,0,0,.10)}
+  .searchslot .searchwrap{flex:none; width:100%; order:0}
+  .seg button{padding:7px 10px; font-size:12px}
+  .ico{width:34px; height:34px}
+  .pname{font-size:24px}
+}
+.backbtn[hidden]{display:none}
+.backbtn{display:block; width:100%; text-align:start; font:inherit; cursor:pointer;
+  background:var(--sunk); border:1px solid var(--line2); border-radius:9px;
+  padding:9px 12px; margin-bottom:12px; font-size:13.5px; color:var(--ink)}
+.backbtn:hover{border-color:var(--gold)}
+.backbtn::before{content:"→"; color:var(--gold); font-weight:700; margin-inline-end:7px}
+.panelhead{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+.pname{font-family:Amiri,serif; font-size:27px; font-weight:700; line-height:1.2}
+.plq{color:#A23A2E; font-size:13px}
+:root[data-theme="dark"] .plq{color:#E08A78}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .plq{color:#E08A78}}
+.meta{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
+.badge{font-size:11.5px; border:1px solid var(--line2); border-radius:99px; padding:2px 9px; color:var(--muted);
+  display:inline-flex; gap:5px; align-items:center}
+.badge i{width:9px; height:9px; border-radius:50%; display:inline-block}
+.nasab{font-family:Amiri,serif; font-size:16px; line-height:2; margin-top:12px;
+  background:var(--sunk); border:1px solid var(--line); border-radius:9px; padding:10px 12px}
+.nasab button{background:none; border:0; padding:0 1px; font:inherit; color:var(--ink);
+  border-bottom:1px dotted var(--line2)}
+.nasab button:hover{color:var(--gold); border-bottom-color:var(--gold)}
+.nasab .sep{color:var(--muted)}
+h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; margin:16px 0 6px}
+.kids{display:flex; flex-direction:column; gap:2px}
+.kid{display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:7px;
+  background:none; border:0; width:100%; text-align:start; font:inherit}
+.kid:hover{background:var(--sunk)}
+.kid i{width:9px; height:9px; border-radius:50%; flex:0 0 auto}
+.kid b{font-family:Amiri,serif; font-size:16px; font-weight:700}
+.kid u{text-decoration:none; font-size:11px; color:var(--muted); white-space:nowrap}
+.kid small{color:var(--muted); font-size:11.5px; margin-inline-start:auto; white-space:nowrap}
+.note{background:var(--gold-soft); border:1px solid var(--line2); border-radius:9px;
+  padding:9px 11px; font-size:12px; line-height:1.75; margin:8px 0 12px; color:var(--ink)}
+.facts{margin-top:14px; border-top:1px solid var(--line); padding-top:10px}
+.facts div{font-size:13px; line-height:1.9; color:var(--muted)}
+.facts b{color:var(--ink); font-weight:600}
+.hrow{display:flex; align-items:baseline; gap:8px; width:100%; text-align:start; font:inherit;
+  background:none; border:0; padding:8px 6px; border-radius:7px; border-bottom:1px dashed var(--line)}
+.hrow:hover{background:var(--sunk)}
+.hrow[aria-pressed="true"]{background:var(--gold-soft)}
+.hrow b{font-family:Amiri,serif; font-size:18px; white-space:nowrap}
+.hrow .sub{font-family:Amiri,serif; font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.hrow .cnt{margin-inline-start:auto; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap}
+.hrow em{font-style:normal; font-size:10.5px; color:var(--gold); border:1px solid var(--line2);
+  border-radius:99px; padding:0 6px}
+.hbadge{display:inline-flex; gap:5px; align-items:center; background:var(--gold-soft);
+  border:1px solid var(--line2); border-radius:99px; padding:2px 10px; font-size:12.5px;
+  font-family:Amiri,serif; cursor:pointer}
+.elder{display:flex; align-items:baseline; gap:8px; width:100%; text-align:start; font:inherit;
+  background:none; border:0; padding:7px 6px; border-radius:7px; border-bottom:1px dashed var(--line)}
+.elder:hover{background:var(--sunk)}
+.elder b{font-family:Amiri,serif; font-size:18px}
+.elder span{font-family:Amiri,serif; font-size:12.5px; color:var(--muted)}
+.slots{display:flex; flex-direction:column; gap:8px; margin-top:6px}
+.slot{display:flex; align-items:center; gap:9px; width:100%; text-align:start; font:inherit;
+  background:var(--sunk); border:1px dashed var(--line2); border-radius:10px; padding:10px 12px}
+.slot[aria-pressed="true"]{border-style:solid; border-color:var(--gold); background:var(--gold-soft)}
+.slot em{font-style:normal; width:22px; height:22px; border-radius:50%; flex:0 0 auto;
+  display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff}
+.slot .who{font-family:Amiri,serif; font-size:17px; font-weight:700}
+.slot .sub{display:block; font-size:11.5px; color:var(--muted); font-family:Amiri,serif}
+.slot .ph{color:var(--muted); font-size:13.5px}
+.meetres{margin-top:14px; background:var(--sunk); border:1px solid var(--line); border-radius:10px; padding:12px}
+.meetres .big{font-family:Amiri,serif; font-size:23px; font-weight:700; line-height:1.35}
+.meetres .rel{margin-top:6px; font-size:13.5px}
+.meetres .nas2{font-family:Amiri,serif; font-size:14px; color:var(--muted); line-height:1.9; margin-top:8px}
+.steps{display:flex; gap:10px; margin-top:12px; font-size:12.5px; flex-wrap:wrap}
+.steps div{flex:1 1 120px; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px}
+.steps b{display:block; font-size:20px; font-family:Amiri,serif}
+.rare{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px}
+.rare button{background:var(--sunk); border:1px solid var(--line2); border-radius:99px;
+  padding:4px 11px; font-family:Amiri,serif; font-size:16px; display:inline-flex; gap:6px; align-items:center}
+.rare button:hover{border-color:var(--gold)}
+.rare button i{font-family:"IBM Plex Sans Arabic",sans-serif; font-style:normal;
+  font-size:11px; color:var(--muted)}
+.rgroup{margin-top:10px}
+.rgroup>span{font-size:11.5px; color:var(--gold); font-weight:600; letter-spacing:.05em}
+.res{display:flex; flex-direction:column; gap:1px}
+.resrow{display:block; width:100%; text-align:start; background:none; border:0; padding:7px 6px; border-radius:7px}
+.resrow:hover{background:var(--sunk)}
+.resrow b{font-family:Amiri,serif; font-size:17px}
+.resrow .l2{display:block; font-size:11.5px; color:var(--muted); font-family:Amiri,serif}
+.blank{color:var(--muted); font-size:13.5px; padding:18px 4px; text-align:center}
+.hint{font-size:12px; color:var(--muted); margin:10px 0 0; line-height:1.8}
+.hint b{color:var(--ink); font-weight:600}
+.legend{display:flex; gap:8px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:14px;
+  border-top:1px solid var(--line); padding-top:10px}
+.legend i{width:10px; height:10px; border-radius:3px; display:inline-block; margin-inline-end:3px; vertical-align:-1px}
+.loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:var(--canvasbg); color:var(--muted); font-size:14px; z-index:5}
+</style>
+
+<div class="app">
+  <button class="credit" id="credit" type="button" title="عبدالرحمن بن عبدالله بن عبدالعزيز بن محمد بن سعود">جميع الحقوق محفوظة © أبو راكان ٢٠٢٦</button>
+  <div class="bar">
+    <button class="ico" id="menu" type="button" aria-label="القوائم" aria-expanded="false">☰</button>
+    <div class="brand">مستعرض شجرة العرافا<small>٤٥٨٨ فردًا في ١٨ جيلًا</small></div>
+    <div class="searchwrap">
+      <input type="search" id="q" placeholder="ابحث باسم، أو بنسب: خالد بن محمد بن سعد" autocomplete="off" aria-label="بحث">
+      <span class="hitcount" id="hits"></span>
+    </div>
+    <div class="seg" role="group" aria-label="طبقة التلوين">
+      <button id="m0" type="button" aria-pressed="false">الرسم الأصلي</button>
+      <button id="m2" type="button" aria-pressed="true">١٤ فرعًا</button>
+    </div>
+  </div>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" hidden aria-label="القوائم">
+    <div class="dhead">
+      <span>ابدأ من هنا</span>
+      <button class="ico" id="dclose" type="button" aria-label="إغلاق">×</button>
+    </div>
+    <button class="dbig" id="dsearch" type="button">
+      <b>دوّر على شخص</b><span>بالاسم أو بالنسب: خالد بن محمد بن سعد</span></button>
+    <button class="dbig" id="meet" type="button" aria-pressed="false">
+      <b>وين نلتقي؟</b><span>اختر شخصين واعرف جدّهما المشترك</span></button>
+    <button class="dbig" id="dbrowse" type="button">
+      <b>تصفّح الشجرة</b><span>كبّر وتنقّل، والأسماء تظهر بالتدريج</span></button>
+    <div class="dhead" style="margin-top:18px"><span>قوائم</span></div>
+    <button class="dlist" id="houses" type="button" aria-pressed="false">البيوت<i id="nHouses"></i></button>
+    <button class="dlist" id="elders" type="button" aria-pressed="false">كبار الأسرة الأحياء<i id="nElders"></i></button>
+    <button class="dlist" id="rare" type="button" aria-pressed="false">الأسماء النادرة<i id="nRare"></i></button>
+    <div class="src">
+      <h4>مصدر المعلومات</h4>
+      كل ما في هذا المستعرض مستخرج آليًا من لوحة <b>«شجرة العريفي ١٤٤٥هـ»</b>، ولم تُضف إليه معلومة من خارجها.
+      <p><b>تنفيذ وتحقيق اللوحة:</b> صندوق أسرة العريفي، حُرّرت في ١/١/١٤٤٥هـ الموافق ١٩/٧/٢٠٢٣م.</p>
+      <p><b>ومصادرها كما ذكرتها:</b> شجرات النسب المحققة في ١/١/١٤٣١هـ و٢٨/٣/١٤٠٨هـ و١٣٩١هـ، وكبار السن من الأسرة.</p>
+      <p>الحالات كما في اللوحة يوم حُرّرت، ومضى عليها أكثر من ثلاث سنوات.
+      وأسماء البيوت المُعلَّمة <em style="font-style:normal;color:var(--gold)">مقترحة</em> تحتاج تأكيدكم.</p>
+    </div>
+    <p class="dfoot">٤٥٨٨ فردًا في ١٨ جيلًا</p>
+  </aside>
+
+  <div class="body">
+    <div class="stage">
+      <div class="crumbs" id="crumbs"></div>
+      <div class="cwrap">
+      <canvas id="cv"></canvas>
+      <div class="hud">
+        <div class="zoomctl">
+          <button class="ico" id="zin" type="button" title="تكبير">+</button>
+          <button class="ico" id="zout" type="button" title="تصغير">−</button>
+          <button class="ico" id="fit" type="button" title="ملء الإطار" aria-label="ملء الإطار">⤢</button>
+        </div>
+        <div class="tag" id="ztag">×1.0 الفروع الأربعة</div>
+      </div>
+      <div class="loading" id="load">…تحميل الشجرة</div>
+      </div>
+    </div>
+    <div class="searchslot" id="searchslot"></div>
+    <aside class="side" id="sideWrap">
+      <button class="backbtn" id="back" type="button" hidden></button>
+      <div id="side"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var WORLD={w:1690,h:2610};
+var IMGW=3287, IMGH=5075;
+var STCOL=["var(--s0)","var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)"];
+var STN=["أعزب حي","متزوج حي","متزوج متوفى له عقب ذكور وإناث","متزوج متوفى له عقب إناث فقط","متزوج متوفى ليس له عقب","أعزب متوفى"];
+var STS=["أعزب حي","متزوج حي","متوفى له عقب","متوفى له إناث","متوفى بلا عقب","أعزب متوفى"];
+
+var P=[], byRow={}, kids={}, META=null, grid={}, CELL=60, totalNames=0;
+var nameCount={}, tripleCount={}, genStat={}, elders=[];
+var houses=[], houseSel=null, houseMembers=null;
+var tintImg={}, tintCache={}, poster=null;
+var mode=2, showLabels=true, drawerOpen=false, sel=null, results=[], resSet=null, panelMode="intro", rareList=null;
+var meet=[null,null], meetSlot=0;
+var view={s:0.25,x:0,y:0}, anim=null;
+var cv=document.getElementById("cv"), ctx=cv.getContext("2d"), DPR=1;
+var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function ar(n){ return String(n).replace(/[0-9]/g,function(d){return "٠١٢٣٤٥٦٧٨٩"[+d];}); }
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function norm(s){ return String(s||"").replace(/[ً-ْٰـ]/g,"")
+  .replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ؤ/g,"و").replace(/ئ/g,"ي")
+  .replace(/ة/g,"ه").replace(/\s+/g," ").trim(); }
+
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  var rows=[],row=[],f="",q=false;
+  for(var i=0;i<text.length;i++){ var c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===","){ row.push(f); f=""; }
+    else if(c==="\n"){ row.push(f); f=""; if(row.length>1||row[0]!=="") rows.push(row); row=[]; }
+    else if(c!=="\r") f+=c; }
+  if(f!==""||row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+
+/* ---------- عرض ---------- */
+function resize(){
+  placeSearch();
+  var r=cv.getBoundingClientRect();
+  DPR=Math.min(window.devicePixelRatio||1, 2);
+  cv.width=Math.round(r.width*DPR); cv.height=Math.round(r.height*DPR);
+  draw();
+}
+function vw(){ return cv.width/DPR; }
+function vh(){ return cv.height/DPR; }
+function fit(animate){
+  var s=Math.min(vw()/WORLD.w, vh()/WORLD.h)*0.96;
+  goTo({s:s, x:(vw()-WORLD.w*s)/2, y:(vh()-WORLD.h*s)/2}, animate);
+}
+function home(animate){
+  var fs=Math.min(vw()/WORLD.w, vh()/WORLD.h)*0.96;
+  if(fs<0.22){
+    var s=vw()/WORLD.w*0.98;
+    goTo({s:s, x:(vw()-WORLD.w*s)/2, y:vh()*0.5-(WORLD.h*0.42)*s}, animate);
+  } else fit(animate);
+}
+function clampView(v){
+  var minS=Math.min(vw()/WORLD.w, vh()/WORLD.h)*0.85;
+  v.s=Math.max(minS, Math.min(v.s, 5));
+  var w=WORLD.w*v.s, h=WORLD.h*v.s;
+  v.x = w<=vw() ? (vw()-w)/2 : Math.min(0, Math.max(vw()-w, v.x));
+  v.y = h<=vh() ? (vh()-h)/2 : Math.min(0, Math.max(vh()-h, v.y));
+  return v;
+}
+function goTo(t, animate){
+  clampView(t);
+  if(!animate || reduce){ view=t; draw(); return; }
+  var from={s:view.s,x:view.x,y:view.y}, t0=performance.now(), dur=520;
+  cancelAnimationFrame(anim);
+  (function step(now){
+    var k=Math.min(1,(now-t0)/dur), e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    view={s:from.s+(t.s-from.s)*e, x:from.x+(t.x-from.x)*e, y:from.y+(t.y-from.y)*e};
+    draw();
+    if(k<1) anim=requestAnimationFrame(step);
+  })(t0);
+}
+function flyTo(p, zoom){
+  var s=zoom||Math.max(view.s,1.25);
+  goTo({s:s, x:vw()/2 - p.x*s, y:vh()/2 - p.y*s}, true);
+}
+function w2s(x,y){ return [x*view.s+view.x, y*view.s+view.y]; }
+function s2w(x,y){ return [(x-view.x)/view.s, (y-view.y)/view.s]; }
+
+function tintCanvas(m){
+  if(tintCache[m]) return tintCache[m];
+  var im=tintImg[m]; if(!im) return null;
+  var n = m===1?4:14;
+  var off=document.createElement("canvas"); off.width=im.width; off.height=im.height;
+  var o=off.getContext("2d"); o.drawImage(im,0,0);
+  var d=o.getImageData(0,0,im.width,im.height), a=d.data;
+  var base=[css("--b0"),css("--b1"),css("--b2"),css("--b3")].map(hex2rgb);
+  var bark=hex2rgb(css("--bark"));
+  var cols=[];
+  for(var i=0;i<n;i++){
+    if(m===1) cols.push(base[i]);
+    else { var p=META.l2parent[i], sh=[0.78,0.94,1.12,1.3,1.46][META.l2.slice(0,i).filter(function(_,j){return META.l2parent[j]===p;}).length%5];
+           cols.push(shade(base[p],sh)); }
+  }
+  for(var k=0;k<a.length;k+=4){
+    var v=a[k];
+    if(v===255){ a[k+3]=0; }
+    else if(v>=195&&v<=205){ a[k]=bark[0];a[k+1]=bark[1];a[k+2]=bark[2];a[k+3]=255; }
+    else if(v<n){ var c=cols[v]; a[k]=c[0];a[k+1]=c[1];a[k+2]=c[2];a[k+3]=255; }
+    else a[k+3]=0;
+  }
+  o.putImageData(d,0,0);
+  if(poster){                      // نسيج الملصق داخل حدود الشجرة فقط
+    o.save();
+    o.globalCompositeOperation="source-atop";
+    o.globalAlpha=0.30;
+    o.drawImage(poster,0,0,off.width,off.height);
+    o.restore();
+  }
+  tintCache[m]=off; return off;
+}
+function hex2rgb(h){ h=h.replace("#",""); if(h.length===3) h=h.replace(/./g,"$&$&");
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+function shade(c,f){ return c.map(function(v){ return Math.max(0,Math.min(255,Math.round(v*f))); }); }
+
+function lodSet(){
+  var s=view.s;
+  if(s<0.42) return {gen:8, only:"main"};
+  if(s<0.70) return {gen:8};
+  if(s<1.15) return {gen:9};
+  if(s<1.75) return {gen:11};
+  return {gen:99};
+}
+
+function draw(){
+  var c=ctx; c.setTransform(DPR,0,0,DPR,0,0);
+  c.fillStyle=css("--canvasbg"); c.fillRect(0,0,vw(),vh());
+  if(!poster || !META) return;
+  c.save();
+  c.translate(view.x,view.y); c.scale(view.s,view.s);
+  c.imageSmoothingQuality="high";
+  if(mode===0) c.drawImage(poster,0,0,WORLD.w,WORLD.h);
+  else{
+    var t=tintCanvas(mode);
+    if(t) c.drawImage(t,0,0,WORLD.w,WORLD.h);
+  }
+  c.restore();
+
+  // علامات نتائج البحث
+  if(resSet && results.length){
+    c.save();
+    for(var i=0;i<results.length;i++){
+      var p=results[i], q=w2s(p.x,p.y);
+      if(q[0]<-20||q[1]<-20||q[0]>vw()+20||q[1]>vh()+20) continue;
+      var rr=Math.max(5, p.r*view.s*0.9);
+      c.beginPath(); c.arc(q[0],q[1],rr+3,0,6.2832);
+      c.fillStyle="rgba(176,58,54,.22)"; c.fill();
+      c.lineWidth=4.6; c.strokeStyle=css("--maphalo"); c.stroke();
+      c.lineWidth=2.2; c.strokeStyle="#B03A36"; c.stroke();
+    }
+    c.restore();
+  }
+  if(houseMembers && panelMode==="houses"){
+    var hcol=css("--mapa");
+    c.save();
+    for(var hi=0;hi<houseMembers.length;hi++){
+      var hp=houseMembers[hi], hq=w2s(hp.x,hp.y);
+      if(hq[0]<-20||hq[1]<-20||hq[0]>vw()+20||hq[1]>vh()+20) continue;
+      var hr=Math.max(4, hp.r*view.s*0.85);
+      c.beginPath(); c.arc(hq[0],hq[1],hr+2,0,6.2832);
+      c.fillStyle="rgba(31,111,168,.20)"; c.fill();
+      c.lineWidth=4.4; c.strokeStyle=css("--maphalo"); c.stroke();
+      c.lineWidth=2; c.strokeStyle=hcol; c.stroke();
+    }
+    var oq=w2s(houseSel.owner.x,houseSel.owner.y);
+    c.beginPath(); c.arc(oq[0],oq[1],Math.max(14,houseSel.owner.r*view.s*1.2)+5,0,6.2832);
+    c.lineWidth=7; c.strokeStyle=css("--maphalo"); c.stroke();
+    c.lineWidth=3.4; c.strokeStyle=css("--mapgold"); c.stroke();
+    c.restore();
+  }
+  if(panelMode==="meet"){
+    var m=(meet[0]&&meet[1]&&meet[0]!==meet[1]) ? meetPoint(meet[0],meet[1]) : null;
+    [0,1].forEach(function(i){
+      var pp=meet[i]; if(!pp) return;
+      var col=css(i?"--mapb":"--mapa");
+      if(m){
+        var seg = i? m.B.slice(0,m.bi+1) : m.A.slice(0,m.ai+1);
+        c.beginPath();
+        seg.forEach(function(n,k){ var q=w2s(n.x,n.y); k?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]); });
+        c.lineWidth=7; c.strokeStyle=css("--maphalo"); c.stroke();
+        c.lineWidth=3.2; c.strokeStyle=col; c.stroke();
+        seg.forEach(function(n){ var q=w2s(n.x,n.y);
+          c.beginPath(); c.arc(q[0],q[1],4.5,0,6.2832); c.fillStyle=col; c.fill(); });
+      }
+      var q0=w2s(pp.x,pp.y), rr0=Math.max(10, pp.r*view.s*1.1);
+      c.beginPath(); c.arc(q0[0],q0[1],rr0+4,0,6.2832);
+      c.lineWidth=5; c.strokeStyle=css("--maphalo"); c.stroke();
+      c.lineWidth=3; c.strokeStyle=col; c.stroke();
+    });
+    if(m){
+      var qm=w2s(m.node.x,m.node.y);
+      c.beginPath(); c.arc(qm[0],qm[1],17,0,6.2832);
+      c.lineWidth=7; c.strokeStyle=css("--maphalo"); c.stroke();
+      c.lineWidth=3.4; c.strokeStyle=css("--mapgold"); c.stroke();
+    }
+  }
+  if(sel){
+    var q2=w2s(sel.x,sel.y), rr2=Math.max(9, sel.r*view.s*1.1);
+    c.beginPath(); c.arc(q2[0],q2[1],rr2+5,0,6.2832);
+    c.lineWidth=5; c.strokeStyle=css("--maphalo"); c.stroke();
+    c.lineWidth=2.6; c.strokeStyle=css("--mapring"); c.stroke();
+  }
+  if(showLabels) drawLabels();
+  var lod=lodSet();
+  document.getElementById("ztag").textContent =
+    "×"+ar(view.s.toFixed(1))+"، "+
+    (lod.only==="main" ? "الفروع الأربعة" : lod.gen===8 ? "الفروع الأربعة عشر"
+      : lod.gen===9 ? "الجيل ٩" : lod.gen===11 ? "الأجيال ٩ إلى ١١" : "كل الأسماء الظاهرة");
+}
+
+function drawLabels(){
+  if(!META) return;
+  var c=ctx, lod=lodSet(), s=view.s, placed=[];
+  c.textAlign="center"; c.textBaseline="middle";
+  function put(txt, x, y, px, col){
+    var q=w2s(x,y);
+    if(q[0]<-90||q[1]<-40||q[0]>vw()+90||q[1]>vh()+40) return false;
+    c.font="700 "+px+'px Amiri, "Times New Roman", serif';
+    var w=c.measureText(txt).width+px*0.34, h=px*1.12;
+    var x0=q[0]-w/2, y0=q[1]-h/2;
+    for(var i=0;i<placed.length;i++){ var r=placed[i];
+      if(x0<r[2] && r[0]<x0+w && y0<r[3] && r[1]<y0+h) return false; }
+    placed.push([x0,y0,x0+w,y0+h]);
+    c.lineWidth=Math.max(3, px*0.36); c.strokeStyle=css("--maphalo"); c.lineJoin="round";
+    c.strokeText(txt,q[0],q[1]);
+    c.fillStyle=col||css("--maptext"); c.fillText(txt,q[0],q[1]);
+    return true;
+  }
+  if(houseSel && panelMode==="houses"){
+    put(houseSel.name.replace("آل ",""), houseSel.owner.x, houseSel.owner.y,
+        Math.max(17,Math.min(34, houseSel.owner.r*s*1.5)), css("--mapgold"));
+  }
+  if(panelMode==="meet"){
+    var mm=(meet[0]&&meet[1]&&meet[0]!==meet[1])?meetPoint(meet[0],meet[1]):null;
+    if(mm) put(mm.node.name, mm.node.x, mm.node.y, Math.max(17,Math.min(36, 26*s*1.6)), css("--mapgold"));
+    [0,1].forEach(function(i){ var pp=meet[i]; if(!pp) return;
+      put(pp.name, pp.x, pp.y, Math.max(15,Math.min(32, pp.r*s*1.35)), css(i?"--mapb":"--mapa")); });
+  }
+  if(sel){ var sp=Math.max(15, Math.min(34, sel.r*s*1.35)); put(sel.name, sel.x, sel.y, sp, null); }
+  META.ancestors.slice().reverse().forEach(function(a){
+    var big = a.i>=7;
+    if(!big && s<0.5) return;
+    put(a.name, a.x, a.y, Math.max(14, Math.min(36, (big?27:21)*s*2.2)), css("--mapgold"));
+  });
+  if(lod.only==="main") return;
+  var cand=[];
+  for(var i=0;i<P.length;i++){
+    var p=P[i];
+    if(p.gen>lod.gen) continue;
+    var px=Math.max(11, Math.min(31, p.r*s*1.2));
+    if(px<11 || (lod.gen===99 && p.r*s<7)) continue;
+    cand.push([p,px]);
+  }
+  cand.sort(function(a,b){ return a[0].gen-b[0].gen || b[0].r-a[0].r; });
+  var cap = 900;
+  for(var j=0;j<cand.length && placed.length<cap;j++) put(cand[j][0].name, cand[j][0].x, cand[j][0].y, cand[j][1], null);
+}
+
+/* ---------- تفاعل ---------- */
+function buildGrid(){
+  grid={};
+  P.forEach(function(p,i){
+    var k=((p.x/CELL)|0)+"_"+((p.y/CELL)|0);
+    (grid[k]=grid[k]||[]).push(i);
+  });
+}
+function pick(wx,wy){
+  var best=null, bd=1e9;
+  for(var gx=((wx/CELL)|0)-1; gx<=((wx/CELL)|0)+1; gx++)
+  for(var gy=((wy/CELL)|0)-1; gy<=((wy/CELL)|0)+1; gy++){
+    var a=grid[gx+"_"+gy]; if(!a) continue;
+    for(var i=0;i<a.length;i++){
+      var p=P[a[i]], dx=p.x-wx, dy=p.y-wy, d=dx*dx+dy*dy;
+      var rad=Math.max(p.r, 9/view.s);
+      if(d<rad*rad && d<bd){ bd=d; best=p; }
+    }
+  }
+  return best;
+}
+function pickForMeet(p){
+  pushState();
+  meet[meetSlot]=p;
+  meetSlot = meet[0]&&meet[1] ? meetSlot : (meetSlot===0?1:0);
+  sel=null; results=[]; resSet=null;
+  document.getElementById("q").value=""; setHits("");
+  crumbs(); draw(); panel();
+  if(meet[0]&&meet[1]){
+    var m=meetPoint(meet[0],meet[1]);
+    if(m){
+      var xs=[meet[0].x,meet[1].x,m.node.x], ys=[meet[0].y,meet[1].y,m.node.y];
+      var x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs);
+      var y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys);
+      var sc=Math.min(vw()/(x1-x0+220), vh()/(y1-y0+220));
+      goTo({s:Math.min(sc,2.2), x:vw()/2-((x0+x1)/2)*Math.min(sc,2.2), y:vh()/2-((y0+y1)/2)*Math.min(sc,2.2)}, true);
+    }
+    revealPanel();
+  }
+}
+var hist=[], restoring=false;
+function snap(){
+  return { mode:panelMode, sel:sel?sel.row:0, house:houseSel?houseSel.i:-1,
+           q:document.getElementById("q").value,
+           m0:meet[0]?meet[0].row:0, m1:meet[1]?meet[1].row:0, slot:meetSlot };
+}
+function sameSnap(a,b){ return !!a&&!!b&&a.mode===b.mode&&a.sel===b.sel&&a.house===b.house&&
+  a.q===b.q&&a.m0===b.m0&&a.m1===b.m1; }
+function pushState(){
+  if(restoring) return;
+  var st=snap();
+  if(sameSnap(hist[hist.length-1],st)) return;
+  hist.push(st); if(hist.length>80) hist.shift();
+  updateBack();
+}
+function backLabel(st){
+  if(st.mode==="houses") return st.house>=0 && houses[st.house] ? "رجوع إلى "+houses[st.house].name : "رجوع إلى قائمة البيوت";
+  if(st.mode==="elders") return "رجوع إلى كبار الأسرة";
+  if(st.mode==="rare")   return "رجوع إلى الأسماء النادرة";
+  if(st.mode==="meet")   return "رجوع إلى «وين نلتقي؟»";
+  if(st.sel && byRow[st.sel]) return "رجوع إلى "+byRow[st.sel].name;
+  if(st.q) return "رجوع إلى نتائج «"+st.q+"»";
+  return "رجوع";
+}
+function updateBack(){
+  var el=document.getElementById("back");
+  if(!hist.length){ el.hidden=true; return; }
+  el.hidden=false; el.textContent=backLabel(hist[hist.length-1]);
+}
+function applyState(st){
+  restoring=true;
+  var qEl=document.getElementById("q");
+  qEl.value=st.q||"";
+  if(st.q) search(st.q);
+  else { results=[]; resSet=null; setHits(""); }
+  panelMode=st.mode;
+  ["houses","meet","elders","rare"].forEach(function(k){
+    document.getElementById(k).setAttribute("aria-pressed", k===st.mode?"true":"false"); });
+  houseSel = (st.house>=0 && houses[st.house]) ? houses[st.house] : null;
+  houseMembers = houseSel ? membersOf(houseSel) : null;
+  meet = [ st.m0?byRow[st.m0]:null, st.m1?byRow[st.m1]:null ];
+  meetSlot = st.slot||0;
+  sel = st.sel ? byRow[st.sel] : null;
+  restoring=false;
+  crumbs(); draw(); panel();
+}
+function goBack(){
+  if(!hist.length) return;
+  applyState(hist.pop());
+  updateBack();
+}
+function revealPanel(){
+  if(window.innerWidth>820) return;
+  var slot=document.getElementById("searchslot"), sw=document.getElementById("sideWrap");
+  /* شريط البحث لاصق أعلى الشاشة، فنترك له مساحته حتى لا يغطي زر الرجوع */
+  sw.style.scrollMarginTop = (slot && slot.offsetParent!==null ? slot.offsetHeight+6 : 0)+"px";
+  sw.scrollIntoView({behavior:"smooth",block:"start"});
+}
+var OWNER_ROW=1234;
+function goOwner(){
+  var p=byRow[OWNER_ROW]; if(!p) return;
+  document.getElementById("q").value=""; results=[]; resSet=null; setHits("");
+  if(drawerOpen) setDrawer(false);
+  select(p, true); revealPanel();
+}
+function select(p, fly){
+  pushState();
+  if(p && panelMode!=="meet") { if(panelMode==="houses"){ houseSel=null; houseMembers=null;
+      document.getElementById("houses").setAttribute("aria-pressed","false"); }
+    panelMode="intro";
+    document.getElementById("rare").setAttribute("aria-pressed","false");
+    document.getElementById("elders").setAttribute("aria-pressed","false"); }
+  sel=p||null;
+  if(p && fly) flyTo(p, Math.max(view.s, 1.3));
+  else draw();
+  panel(); crumbs();
+}
+
+/* ---------- اللوحة ---------- */
+function esc(s){ return String(s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];}); }
+function ancGen(i){ return i<=6 ? i : 7; }
+function fullChain(p){
+  var out=[], cur=p, g=0;
+  while(cur && g++<40){ out.push({k:"p"+cur.row, name:cur.name, gen:cur.gen, x:cur.x, y:cur.y, node:cur});
+    cur = cur.fa ? byRow[cur.fa] : null; }
+  var ai = p ? null : null;
+  var last = out.length ? out[out.length-1].node : null;
+  if(last && !last.fa){
+    var i = last.ancParent;
+    while(i!=null && i>=0){ var a=META.ancestors[i];
+      out.push({k:"a"+i, name:a.name, gen:ancGen(i), x:a.x, y:a.y, anc:a}); i=a.parent; }
+  }
+  return out;
+}
+function meetPoint(a,b){
+  var A=fullChain(a), B=fullChain(b), idx={};
+  A.forEach(function(n,i){ idx[n.k]=i; });
+  for(var j=0;j<B.length;j++){
+    if(idx[B[j].k]!=null) return {node:B[j], ai:idx[B[j].k], bi:j, A:A, B:B};
+  }
+  return null;
+}
+function plural(n,one,two,few,many){
+  return n===1?one : n===2?two : ((n%100)>=3&&(n%100)<=10 ? ar(n)+" "+few : ar(n)+" "+many);
+}
+function genWord(n){ return n===1?"جيل":(n===2?"جيلان":"أجيال"); }
+function genPhrase(n){ return n===1?"جيل واحد":(n===2?"جيلين":(n<11?ar(n)+" أجيال":ar(n)+" جيلًا")); }
+function relWord(da,db,na,nb){
+  if(da===0||db===0){ var n=Math.max(da,db);
+    return n===1 ? "أب وابنه" : "جدّ وحفيده بينهما "+genPhrase(n); }
+  if(da===1&&db===1) return "إخوة";
+  if(da===2&&db===2) return "أولاد عم";
+  if(da===db) return "أولاد عم من الدرجة "+ar(da-1);
+  var near = da<db ? na : nb, d=Math.abs(da-db);
+  return "قرابة متباعدة، "+near+" أقرب إلى الجدّ المشترك بـ"+genPhrase(d);
+}
+function chainOf(p){
+  var out=[], cur=p, g=0;
+  while(cur && g++<40){ out.push({name:cur.name, node:cur}); cur = cur.fa ? byRow[cur.fa] : null;
+    if(!cur) break; }
+  var last = out.length? out[out.length-1].node : null;
+  if(last && !last.fa){
+    var ai = last.ancParent;
+    while(ai!=null && ai>=0){ var a=META.ancestors[ai]; out.push({name:a.name, anc:a}); ai=a.parent; }
+  }
+  return out;
+}
+function meetHTML(){
+  var h='<h3>وين نلتقي؟</h3>'+
+    '<p class="hint">اختر شخصين من الشجرة أو بالبحث لتعرف عند أي جدّ يلتقيان، وكم جيلًا بينهما وبينه.</p>'+
+    '<div class="slots">';
+  [0,1].forEach(function(i){
+    var p=meet[i], col=i?"var(--pb)":"var(--pa)";
+    h+='<button class="slot" type="button" data-slot="'+i+'" aria-pressed="'+(meetSlot===i?"true":"false")+'">'+
+       '<em style="background:'+col+'">'+ar(i+1)+'</em>'+
+       (p? '<span><span class="who">'+esc(p.name)+'</span>'+
+           '<span class="sub">'+esc(p.short)+'، الجيل '+ar(p.gen)+'</span></span>'
+         : '<span class="ph">اضغط هنا ثم اختر من الشجرة…</span>')+'</button>';
+  });
+  h+='</div>';
+  if(meet[0]&&meet[1]){
+    if(meet[0]===meet[1]) h+='<p class="blank">هذا نفس الشخص، اختر ثانيًا.</p>';
+    else{
+      var m=meetPoint(meet[0],meet[1]);
+      if(!m) h+='<p class="blank">ما وصلنا لجدّ مشترك بينهما في اللوحة.</p>';
+      else{
+        var da=meet[0].gen-m.node.gen, db=meet[1].gen-m.node.gen;
+        var nas=m.A.slice(m.ai+1).map(function(n){ return n.name; }).join(" بن ");
+        h+='<div class="meetres"><span style="font-size:11.5px;color:var(--gold);font-weight:600">يلتقيان عند</span>'+
+           '<div class="big">'+esc(m.node.name)+'</div>'+
+           (nas?'<div class="nas2">بن '+esc(nas)+'</div>':'<div class="nas2">من سلسلة الجذع، الجيل '+ar(m.node.gen)+'</div>')+
+           '<div class="rel"><b>'+relWord(da,db,esc(meet[0].name),esc(meet[1].name))+'</b></div>'+
+           '<div class="steps">'+
+             '<div style="border-color:var(--pa)"><b>'+ar(da)+'</b>'+genWord(da)+' من '+esc(meet[0].name)+'</div>'+
+             '<div style="border-color:var(--pb)"><b>'+ar(db)+'</b>'+genWord(db)+' من '+esc(meet[1].name)+'</div>'+
+           '</div></div>'+
+           '<p class="hint">المساران مرسومان على الشجرة باللونين.</p>';
+      }
+    }
+  }
+  h+='<p class="hint" style="margin-top:14px"><button type="button" data-meetreset="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">ابدأ من جديد</button></p>';
+  return h;
+}
+function housesHTML(){
+  if(!houses.length) return '<p class="blank">ما قدرنا نحمّل قائمة البيوت، حدّث الصفحة.</p>';
+  var h='<h3>'+plural(houses.length,'بيت واحد','بيتان','بيوت','بيتًا')+'</h3>'+
+    '<div class="note">ما عليه لقب أحمر في اللوحة مؤكّد، وما هو <em style="font-style:normal;color:var(--gold)">مقترح</em> استُنتج آليًا ويحتاج تأكيدكم. '+
+    'ومن ذريته أربعة فأقل مستبعد.</div>';
+  if(houseSel){
+    var m=houseSel;
+    h+='<div class="meetres"><span style="font-size:11.5px;color:var(--gold);font-weight:600">البيت المختار</span>'+
+       '<div class="big">'+esc(m.name)+'</div>'+
+       '<div class="nas2">'+esc(m.owner.nasab)+'</div>'+
+       '<div class="steps">'+
+         '<div><b>'+ar(m.size)+'</b>فردًا في البيت</div>'+
+         '<div><b>'+ar(m.gen)+'</b>جيل جدّه</div>'+
+         '<div><b>'+esc(m.branch)+'</b>الفرع</div>'+
+       '</div>'+
+       '<p class="hint">أفراده مُعلَّمون على الشجرة. <button type="button" data-hclear="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">إلغاء التحديد</button></p></div>';
+  }
+  houses.forEach(function(x){
+    h+='<button class="hrow" type="button" data-house="'+x.i+'" aria-pressed="'+(houseSel===x?"true":"false")+'">'+
+       '<b>'+esc(x.name)+'</b>'+
+       (x.kind.indexOf("مقترح")>=0?'<em>مقترح</em>':'')+
+       '<span class="sub">'+esc(x.owner.short)+'</span>'+
+       '<span class="cnt">'+ar(x.size)+'، ج'+ar(x.gen)+'</span></button>';
+  });
+  return h;
+}
+function eldersHTML(){
+  var g12=genStat[12]||{n:0,a:0};
+  var h='<h3>'+ar(elders.length)+' من كبار الأسرة الأحياء</h3>'+
+    '<div class="note">الحالة من ألوان لوحة <b>١٤٤٥هـ</b>، ومضى عليها أكثر من ثلاث سنوات، فقد يكون بعضهم تُوفّي بعدها. '+
+    'راجعوا أهل الفرع قبل الاعتماد عليها.</div>';
+  var cur=null;
+  elders.forEach(function(p){
+    if(p.gen!==cur){ cur=p.gen;
+      var st=genStat[cur]||{n:0,a:0};
+      h+='<h3 style="color:var(--gold)">الجيل '+ar(cur)+'، '+ar(st.a)+' '+(st.a===1?'حيّ':'أحياء')+' من '+ar(st.n)+'</h3>';
+      if(st.a===1) h+='<p class="hint" style="margin:0 0 4px">الوحيد الحي في جيله، يستحق التأكد من أهل الفرع.</p>'; }
+    h+='<button class="elder" type="button" data-row="'+p.row+'">'+
+       '<b>'+esc(p.name)+'</b>'+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span>':'')+
+       '<span>'+esc(p.short.replace(p.name+" بن ",""))+'</span>'+
+       '<span style="margin-inline-start:auto">فرع '+esc(META.l1[p.b1])+'</span></button>';
+  });
+  h+='<p class="hint">الجيل ١٢ فيه <b>'+ar(g12.a)+'</b> حيًا من '+ar(g12.n)+'، أكثر من أن يُسرد هنا. '+
+     'والأجيال ٨ و٩ لم يبقَ منها أحد.</p>';
+  return h;
+}
+function factsHTML(p){
+  var n=nameCount[p.name]||1, tot=P.length;
+  var one = n===1 ? "لا يحمله أحد غيره في الشجرة" : "واحد من كل "+ar(Math.round(tot/n))+" في الأسرة";
+  var t=(tripleCount[p.tkey]||1)-1;
+  var tline = t===0 ? "متفرّد باسمه الثلاثي" :
+    (t===1 ? "معه شخص واحد بنفس الاسم الثلاثي"
+           : t===2 ? "معه شخصان بنفس الاسم الثلاثي"
+           : "معه "+ar(t)+(t<11?" أشخاص":" شخصًا")+" بنفس الاسم الثلاثي");
+  var st=genStat[p.gen]||{n:1,a:0};
+  return '<div class="facts">'+
+    '<div>اسم <b>'+esc(p.name)+'</b>، '+one+'، '+ar(n)+' من '+ar(tot)+'.</div>'+
+    '<div>'+tline+'.</div>'+
+    '<div>الجيل <b>'+ar(p.gen)+'</b>: '+ar(Math.round(st.a/st.n*100))+'٪ من جيله أحياء ('+ar(st.a)+' من '+ar(st.n)+').</div>'+
+  '</div>';
+}
+function rareHTML(){
+  var groups=[[1,"يتكرر مرة واحدة"],[2,"يتكرر مرتين"],[3,"يتكرر ثلاث مرات"]];
+  var covered=rareList.reduce(function(a,r){ return a+r.n; },0);
+  var h='<h3>'+ar(rareList.length)+' اسمًا نادرًا من '+ar(totalNames)+'</h3>'+
+    '<p class="hint">أسماء يحملها ثلاثة أفراد أو أقل، مجموعهم <b>'+ar(covered)+'</b> فردًا، '+
+    ar(Math.round(covered/P.length*100))+'٪ من الشجرة. اضغط أي اسم لتحديد حامليه على الرسم.</p>';
+  groups.forEach(function(g){
+    var list=rareList.filter(function(r){ return r.n===g[0]; });
+    if(!list.length) return;
+    h+='<div class="rgroup"><span>'+g[1]+'، '+ar(list.length)+'</span><div class="rare">'+
+      list.map(function(r){ return '<button type="button" data-rare="'+esc(r.label)+'">'+esc(r.label)+
+        (g[0]>1?'<i>'+ar(r.n)+'</i>':'')+'</button>'; }).join("")+'</div></div>';
+  });
+  return h;
+}
+function panel(){
+  var el=document.getElementById("side");
+  if(panelMode==="meet" && results.length){ renderResults(el); return; }
+  if(panelMode==="meet"){
+    el.innerHTML=meetHTML();
+    el.querySelectorAll("[data-slot]").forEach(function(b){
+      b.addEventListener("click",function(){ meetSlot=+b.dataset.slot; panel(); });
+    });
+    var rs=el.querySelector("[data-meetreset]");
+    if(rs) rs.addEventListener("click",function(){ meet=[null,null]; meetSlot=0; draw(); panel(); });
+    return;
+  }
+  if(panelMode==="houses" && !sel && !results.length){
+    el.innerHTML=housesHTML();
+    el.querySelectorAll("[data-house]").forEach(function(b){
+      b.addEventListener("click",function(){ var x=houses[+b.dataset.house];
+        setHouse(houseSel===x?null:x); revealPanel(); });
+    });
+    var hc=el.querySelector("[data-hclear]");
+    if(hc) hc.addEventListener("click",function(){ setHouse(null); });
+    return;
+  }
+  if(panelMode==="elders" && !sel && !results.length){
+    el.innerHTML=eldersHTML();
+    el.querySelectorAll("[data-row]").forEach(function(b){
+      b.addEventListener("click",function(){ var pp=byRow[+b.dataset.row]; if(pp){ select(pp,true); revealPanel(); } });
+    });
+    return;
+  }
+  if(panelMode==="rare" && !sel && !results.length){
+    el.innerHTML=rareHTML();
+    el.querySelectorAll("[data-rare]").forEach(function(b){
+      b.addEventListener("click",function(){
+        var v=b.dataset.rare;
+        pushState();
+        document.getElementById("q").value=v; search(v);
+      });
+    });
+    return;
+  }
+  if(results.length && !sel){ renderResults(el); return; }
+  if(!sel){ el.innerHTML = introHTML(); return; }
+  var p=sel, ch=kids[p.row]||[];
+  var sib = p.fa ? (kids[p.fa]||[]).filter(function(x){return x!==p;}) : [];
+  var ch2=chainOf(p);
+  var nas = ch2.slice(1).map(function(n,i){
+    return '<span class="sep"> بن </span><button type="button" data-row="'+(n.node?n.node.row:"")+'">'+esc(n.name)+'</button>';
+  }).join("");
+  el.innerHTML =
+    '<div class="panelhead"><span class="pname">'+esc(p.name)+'</span>'+
+      (p.laqab?'<span class="plq">'+esc(p.laqab)+'</span>':'')+'</div>'+
+    '<div class="meta">'+
+      '<span class="badge"><i style="background:'+STCOL[p.st]+'"></i>'+STN[p.st]+'</span>'+
+      '<span class="badge">الجيل '+ar(p.gen)+'</span>'+
+      '<span class="badge">فرع '+esc(META.l1[p.b1])+'</span>'+
+      '<span class="badge">'+esc(META.l2[p.b2])+' بن '+esc(META.l1[META.l2parent[p.b2]])+'</span>'+
+      (p.rev?'<span class="badge" style="color:#B8860B">يحتاج مراجعة</span>':'')+
+      (p.row===OWNER_ROW?'<span class="badge" style="color:var(--gold);border-color:var(--gold)">أبو راكان</span>':'')+
+    '</div>'+
+    (p.house ? '<div style="margin-top:9px">'+
+        p.houses.map(function(h,i){ return '<button class="hbadge" type="button" data-gohouse="'+h.i+'">'+
+          (i?'':'من ')+esc(h.name)+'</button>'; }).join(" ")+'</div>' : '')+
+    '<div class="nasab"><b>'+esc(p.name)+'</b>'+nas+'</div>'+
+    '<h3>'+plural(ch.length,'ابن واحد','ابنان','أبناء','ابنًا')+' في اللوحة</h3>'+
+    (ch.length? '<div class="kids">'+ch.map(function(k){
+        var n=(kids[k.row]||[]).length;
+        return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+STCOL[k.st]+'"></i>'+
+               '<b>'+esc(k.name)+'</b>'+(k.laqab?'<span class="plq">'+esc(k.laqab)+'</span>':'')+
+               '<u>'+STS[k.st]+'</u>'+
+               '<small>'+(n?ar(n)+" أبناء":"")+'</small></button>'; }).join("")+'</div>'
+      : '<p class="blank">ما رُسم له أبناء في اللوحة.</p>')+
+    (sib.length? '<h3>'+plural(sib.length,'أخ واحد','أخوان','إخوة','أخًا')+'</h3><div class="kids">'+sib.slice(0,40).map(function(k){
+        return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+STCOL[k.st]+'"></i>'+
+               '<b>'+esc(k.name)+'</b><u>'+STS[k.st]+'</u></button>'; }).join("")+'</div>' : '')+
+    '<p class="hint">ذريته في اللوحة <b>'+ar(descCount(p))+'</b> فردًا.</p>'+ factsHTML(p);
+  el.querySelectorAll("[data-row]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var r=+b.dataset.row, pp=byRow[r]; if(!pp) return;
+      if(panelMode==="meet"){ pickForMeet(pp); return; }
+      select(pp, true); revealPanel();
+    });
+  });
+}
+function membersOf(h){
+  var out=[h.owner], st=[h.owner];
+  while(st.length){ var c=st.pop(); (kids[c.row]||[]).forEach(function(k){ out.push(k); st.push(k); }); }
+  return out;
+}
+function setHouse(h){
+  pushState();
+  houseSel=h; houseMembers = h? membersOf(h) : null;
+  sel=null; results=[]; resSet=null;
+  document.getElementById("q").value=""; setHits("");
+  if(h){
+    var xs=houseMembers.map(function(p){return p.x;}), ys=houseMembers.map(function(p){return p.y;});
+    var x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs);
+    var y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys);
+    var sc=Math.min(vw()/(x1-x0+200), vh()/(y1-y0+200));
+    sc=Math.max(Math.min(sc,2.4), 0.3);
+    goTo({s:sc, x:vw()/2-((x0+x1)/2)*sc, y:vh()/2-((y0+y1)/2)*sc}, true);
+  } else draw();
+  crumbs(); panel();
+}
+function descCount(p){
+  var n=0, stack=[p];
+  while(stack.length){ var c=stack.pop(); (kids[c.row]||[]).forEach(function(k){ n++; stack.push(k); }); }
+  return n;
+}
+function introHTML(){
+  return '<h3>دوّر على اسمك</h3>'+
+    '<p class="hint">اكتب الاسم مع أبيه وجدّه، مثل: <b>خالد بن محمد بن سعد</b>. '+
+    'الاسم وحده ما يكفي، ففي الشجرة ١٨٣ «خالد».</p>'+
+    '<p class="hint">أو اضغط أي اسم في الرسم فتطلع بطاقته. '+
+    'كبّر بالإصبعين أو بعجلة الفأرة لتبين الأسماء الأصغر.</p>'+
+    '<h3>الفروع الأربعة</h3>'+
+    '<p class="hint">اضغط الفرع ليتلوّن في الرسم.</p><div class="kids">'+
+    META.l1.map(function(n,i){
+      var head=P.filter(function(p){return p.b1===i;});
+      return '<button class="kid" type="button" data-b1="'+i+'"><i style="background:'+
+        ["var(--b0)","var(--b1)","var(--b2)","var(--b3)"][i]+'"></i><b>'+esc(n)+'</b>'+
+        '<small>'+ar(head.length)+' فردًا</small></button>'; }).join("")+'</div>'+
+    '<h3>البيوت</h3>'+
+    '<p class="hint"><b>'+ar(houses.length)+'</b> بيتًا يُعرف كل واحد بجدّه. '+
+    '<button type="button" data-houses-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح قائمة البيوت</button></p>'+
+    '<h3>كبار الأسرة</h3>'+
+    '<p class="hint"><b>'+ar(elders.length)+'</b> رجلًا من الجيلين العاشر والحادي عشر كانوا أحياء يوم حُرّرت اللوحة. '+
+    '<button type="button" data-elders-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح كبار الأسرة</button></p>'+
+    '<h3>الأسماء النادرة</h3>'+
+    '<p class="hint"><b>'+ar(rareList?rareList.length:0)+'</b> اسمًا ما يحمله إلا ثلاثة أفراد أو أقل. '+
+    '<button type="button" data-rare-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح الأسماء النادرة</button></p>'+
+    '<div class="legend">'+STN.map(function(n,i){ return '<span><i style="background:'+STCOL[i]+'"></i>'+n+'</span>'; }).join("")+'</div>'+
+    '<p class="hint" style="margin-top:14px">المصدر لوحة <b>شجرة العريفي ١٤٤٥هـ</b> بتنفيذ صندوق أسرة العريفي. '+
+    '<button type="button" data-open-menu="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">تفاصيل المصادر</button></p>';
+}
+function renderResults(el){
+  el.innerHTML='<h3>نتائج البحث</h3><div class="res">'+
+    results.slice(0,300).map(function(p){
+      return '<button class="resrow" type="button" data-row="'+p.row+'">'+
+        '<b>'+esc(p.name)+'</b> '+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
+        '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، فرع '+esc(META.l1[p.b1])+'</span></button>';
+    }).join("")+'</div>'+
+    (results.length>300?'<p class="hint">عُرضت أول ٣٠٠، أضف اسم الأب لتضييق البحث.</p>':'');
+  el.querySelectorAll("[data-row]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var r=+b.dataset.row, pp=byRow[r]; if(!pp) return;
+      if(panelMode==="meet"){ pickForMeet(pp); return; }
+      select(pp, true); revealPanel();
+    });
+  });
+}
+function crumbs(){
+  var el=document.getElementById("crumbs");
+  if(!sel){ el.innerHTML=""; return; }
+  var ch=chainOf(sel).slice(0,7).reverse();
+  el.innerHTML=ch.map(function(n,i){
+    return (i?'<span>›</span>':'')+'<button type="button" data-row="'+(n.node?n.node.row:"")+'">'+esc(n.name)+'</button>';
+  }).join("");
+  el.querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click",function(){
+      var r=+b.dataset.row, pp=byRow[r]; if(!pp) return;
+      if(panelMode==="meet"){ pickForMeet(pp); return; }
+      select(pp, true); revealPanel();
+    });
+  });
+}
+
+function setHits(t){
+  var h=document.getElementById("hits"); if(!h) return;
+  h.textContent=t||"";
+  var w=h.closest(".searchwrap"); if(w) w.classList.toggle("hasHits", !!t);
+}
+
+/* ---------- بحث ---------- */
+function search(v){
+  var q=norm(v);
+  var hits=document.getElementById("hits");
+  if(!q){ results=[]; resSet=null; setHits(""); panel(); draw(); return; }
+  var out=[];
+  for(var i=0;i<P.length;i++){
+    var p=P[i];
+    if(p.nk.indexOf(q)===0 || (p.lqn && p.lqn.indexOf(q)===0)) out.push(p);
+  }
+  out.sort(function(a,b){ return a.gen-b.gen || a.name.localeCompare(b.name,"ar"); });
+  results=out; resSet=true; sel=null;
+  setHits(out.length ? ar(out.length)+" نتيجة" : "لا نتيجة");
+  panel(); crumbs(); draw();
+}
+
+/* ---------- تشغيل ---------- */
+function boot(rows, meta, hrows){
+  META=meta;
+  WORLD.w=meta.clip[0]; WORLD.h=meta.clip[1];
+  var h=rows[0], col={}; h.forEach(function(x,i){ col[x.trim()]=i; });
+  for(var i=1;i<rows.length;i++){
+    var r=rows[i]; if(r.length<6) continue;
+    var st=STN.indexOf(r[col["الحالة"]]);
+    var p={ row:+r[col["#"]], name:r[col["الاسم"]], laqab:r[col["اللقب"]],
+            nasab:r[col["النسب_الكامل"]], gen:+r[col["الجيل"]], fa:+r[col["رقم_صف_الأب"]],
+            b1:+r[col["رقم_الفرع_الرئيسي"]], b2:+r[col["رقم_الفرع_الفرعي"]],
+            st:st<0?0:st, rev:r[col["يحتاج_مراجعة"]]==="1",
+            x:+r[col["إحداثي_س"]], y:+r[col["إحداثي_ص"]], r:+r[col["نصف_القطر"]] };
+    p.nk=norm(p.nasab); p.lqn=p.laqab?norm(p.laqab):"";
+    p.short=p.nasab.split(" بن ").slice(0,4).join(" بن ");
+    P.push(p); byRow[p.row]=p;
+  }
+  P.forEach(function(p){ if(p.fa) (kids[p.fa]=kids[p.fa]||[]).push(p); });
+  Object.keys(kids).forEach(function(k){ kids[k].sort(function(a,b){ return a.gen-b.gen; }); });
+  // ربط جذور الأفراد بأجداد الجذع
+  var headOf={};
+  META.l2head.forEach(function(row,i){ headOf[row]=i; });
+  P.forEach(function(p){
+    if(!p.fa){ p.ancParent = 7+p.b1; }   // محمد/خلف/سعد/ناصر = 7..10
+  });
+  houses=[];
+  if(hrows && hrows.length>1){
+    var hh=hrows[0], hc={}; hh.forEach(function(x,i){ hc[x.trim()]=i; });
+    for(var j=1;j<hrows.length;j++){
+      var q=hrows[j]; if(q.length<5) continue;
+      var owner=byRow[+q[hc["رقم_الصف"]]]; if(!owner) continue;
+      houses.push({ i:houses.length, name:q[hc["البيت"]], kind:q[hc["النوع"]],
+        owner:owner, gen:+q[hc["الجيل"]], size:+q[hc["الذرية_المرسومة"]]+1,
+        branch:q[hc["الفرع_الرئيسي"]] });
+    }
+    houses.sort(function(a,b){ return b.size-a.size; });
+    houses.forEach(function(h,i){ h.i=i; h.owner.isHouse=h; });
+    P.forEach(function(p){
+      var cur=p, hs=[], g=0;
+      while(cur && g++<40){ if(cur.isHouse) hs.push(cur.isHouse); cur = cur.fa?byRow[cur.fa]:null; }
+      p.houses=hs; p.house=hs.length?hs[0]:null;
+    });
+  }
+  nameCount={}; tripleCount={}; genStat={};
+  P.forEach(function(p){
+    nameCount[p.name]=(nameCount[p.name]||0)+1;
+    var f=p.fa?byRow[p.fa]:null, g=(f&&f.fa)?byRow[f.fa]:null;
+    p.tkey=p.name+"|"+(f?f.name:"")+"|"+(g?g.name:"");
+    tripleCount[p.tkey]=(tripleCount[p.tkey]||0)+1;
+    var st=genStat[p.gen]=genStat[p.gen]||{n:0,a:0};
+    st.n++; if(p.st===0||p.st===1) st.a++;
+  });
+  elders=P.filter(function(p){ return (p.st===0||p.st===1) && p.gen<=11; })
+          .sort(function(a,b){ return a.gen-b.gen || a.name.localeCompare(b.name,"ar"); });
+  var cnt={}, spell={};
+  P.forEach(function(p){ var k=norm(p.name); cnt[k]=(cnt[k]||0)+1;
+    (spell[k]=spell[k]||{})[p.name]=(spell[k][p.name]||0)+1; });
+  rareList=Object.keys(cnt).filter(function(k){ return cnt[k]<=3; }).map(function(k){
+    var v=Object.keys(spell[k]).sort(function(a,b){ return spell[k][b]-spell[k][a]; });
+    return {label:v[0], n:cnt[k], key:k};
+  }).sort(function(a,b){ return a.n-b.n || a.label.localeCompare(b.label,"ar"); });
+  totalNames=Object.keys(cnt).length;
+  buildGrid();
+  var ld=document.getElementById("load"); if(ld) ld.remove();
+  document.getElementById("nHouses").textContent=ar(houses.length);
+  document.getElementById("nElders").textContent=ar(elders.length);
+  document.getElementById("nRare").textContent=ar(rareList.length);
+  home(false); panel();
+}
+
+function placeSearch(){         /* الجوال: البحث بين الخريطة واللوحة */
+  var slot=document.getElementById("searchslot"),
+      bar=document.querySelector(".bar"),
+      sw=document.querySelector(".searchwrap"),
+      seg=document.querySelector(".seg");
+  if(!slot||!sw) return;
+  if(window.innerWidth<=820){ if(sw.parentNode!==slot) slot.appendChild(sw); }
+  else if(sw.parentNode!==bar) bar.insertBefore(sw, seg);
+}
+
+function wire(){
+  var pointers=new Map(), lastDist=0, lastMid=null, moved=0, single=null;
+  function arr(){ var a=[]; pointers.forEach(function(v){ a.push(v); }); return a; }
+  function midOf(){ var a=arr(); return [(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2]; }
+  function distOf(){ var a=arr(); return Math.hypot(a[0][0]-a[1][0], a[0][1]-a[1][1]); }
+  cv.addEventListener("pointerdown",function(e){
+    cv.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId,[e.clientX,e.clientY]);
+    if(pointers.size===1){ single=[e.clientX,e.clientY]; moved=0; cv.classList.add("drag"); }
+    else if(pointers.size===2){ lastDist=distOf(); lastMid=midOf(); }
+  });
+  cv.addEventListener("pointermove",function(e){
+    if(!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId,[e.clientX,e.clientY]);
+    var r=cv.getBoundingClientRect();
+    if(pointers.size>=2){
+      var d=distOf(), m=midOf();
+      if(lastDist>0){
+        var f=d/lastDist, mx=m[0]-r.left, my=m[1]-r.top, w=s2w(mx,my);
+        var t={s:view.s*f};
+        t.x=mx-w[0]*t.s+(m[0]-lastMid[0]);
+        t.y=my-w[1]*t.s+(m[1]-lastMid[1]);
+        view=clampView(t); draw();
+      }
+      lastDist=d; lastMid=m; moved=99; return;
+    }
+    if(single){
+      var dx=e.clientX-single[0], dy=e.clientY-single[1];
+      single=[e.clientX,e.clientY]; moved+=Math.abs(dx)+Math.abs(dy);
+      view.x+=dx; view.y+=dy; clampView(view); draw();
+    }
+  });
+  function up(e){
+    var was=pointers.size;
+    pointers.delete(e.pointerId);
+    if(pointers.size<2){ lastDist=0; lastMid=null; }
+    if(pointers.size===0){
+      cv.classList.remove("drag"); single=null;
+      if(was===1 && moved<=8){
+        var r=cv.getBoundingClientRect(), sx=e.clientX-r.left, sy=e.clientY-r.top;
+        var w=s2w(sx,sy);
+        var p=pick(w[0],w[1]);
+        if(p && panelMode==="meet"){ pickForMeet(p); }
+        else if(p){ document.getElementById("q").value=""; results=[]; resSet=null;
+               setHits(""); select(p,false); revealPanel(); }
+        else if(panelMode!=="meet") select(null,false);
+      }
+    } else if(pointers.size===1){ var a=arr()[0]; single=[a[0],a[1]]; moved=99; }
+  }
+  cv.addEventListener("pointerup",up);
+  cv.addEventListener("pointercancel",up);
+  cv.addEventListener("wheel",function(e){
+    e.preventDefault();
+    var r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+    var w=s2w(mx,my), f=Math.exp(-e.deltaY*0.0016);
+    var t={s:view.s*f}; t.x=mx-w[0]*t.s; t.y=my-w[1]*t.s;
+    view=clampView(t); draw();
+  },{passive:false});
+  cv.addEventListener("dblclick",function(e){
+    var r=cv.getBoundingClientRect(), w=s2w(e.clientX-r.left,e.clientY-r.top);
+    var p=pick(w[0],w[1]);
+    if(p) flyTo(p, Math.min(5, view.s*2));
+    else { var ns=Math.min(5, view.s*1.8);
+      goTo({s:ns, x:(e.clientX-r.left)-w[0]*ns, y:(e.clientY-r.top)-w[1]*ns}, true); }
+  });
+  document.getElementById("credit").onclick=goOwner;
+  document.getElementById("zin").onclick=function(){ goTo({s:view.s*1.6, x:vw()/2-(vw()/2-view.x)/view.s*view.s*1.6, y:vh()/2-(vh()/2-view.y)/view.s*view.s*1.6},true); };
+  document.getElementById("zout").onclick=function(){ goTo({s:view.s/1.6, x:vw()/2-(vw()/2-view.x)/view.s*view.s/1.6, y:vh()/2-(vh()/2-view.y)/view.s*view.s/1.6},true); };
+  function setDrawer(on){
+    drawerOpen=on;
+    document.getElementById("drawer").hidden=!on;
+    document.getElementById("scrim").hidden=!on;
+    document.getElementById("menu").setAttribute("aria-expanded",on?"true":"false");
+    if(on) document.getElementById("dclose").focus();
+  }
+  document.getElementById("back").onclick=goBack;
+  document.getElementById("menu").onclick=function(){ setDrawer(!drawerOpen); };
+  document.getElementById("dclose").onclick=function(){ setDrawer(false); };
+  document.getElementById("scrim").onclick=function(){ setDrawer(false); };
+  document.getElementById("dsearch").onclick=function(){
+    pushState();
+    setDrawer(false);
+    panelMode="intro"; sel=null; results=[]; resSet=null;
+    ["houses","meet","elders","rare"].forEach(function(k){ document.getElementById(k).setAttribute("aria-pressed","false"); });
+    if(houseSel) setHouse(null); else { draw(); panel(); }
+    var q=document.getElementById("q"); q.focus(); q.select();
+  };
+  document.getElementById("dbrowse").onclick=function(){
+    pushState();
+    setDrawer(false);
+    panelMode="intro"; sel=null; results=[]; resSet=null; meet=[null,null];
+    document.getElementById("q").value=""; setHits("");
+    ["houses","meet","elders","rare"].forEach(function(k){ document.getElementById(k).setAttribute("aria-pressed","false"); });
+    houseSel=null; houseMembers=null;
+    crumbs(); panel(); home(true);
+  };
+  ["houses","meet","elders","rare"].forEach(function(k){
+    document.getElementById(k).addEventListener("click",function(){ setDrawer(false); });
+  });
+  document.getElementById("fit").onclick=function(){ fit(true); };
+  window.addEventListener("orientationchange",function(){ setTimeout(function(){ resize(); home(false); },250); });
+  document.getElementById("meet").onclick=function(){
+    pushState();
+    var on = panelMode!=="meet";
+    panelMode = on ? "meet" : "intro";
+    this.setAttribute("aria-pressed", on?"true":"false");
+    document.getElementById("houses").setAttribute("aria-pressed","false");
+    if(houseSel) setHouse(null);
+    document.getElementById("rare").setAttribute("aria-pressed","false");
+    document.getElementById("elders").setAttribute("aria-pressed","false");
+    if(on){ sel=null; results=[]; resSet=null; meetSlot = meet[0]?1:0;
+      document.getElementById("q").value=""; setHits(""); }
+    crumbs(); draw(); panel(); revealPanel();
+  };
+  document.getElementById("houses").onclick=function(){
+    pushState();
+    var on = panelMode!=="houses";
+    panelMode = on ? "houses" : "intro";
+    this.setAttribute("aria-pressed", on?"true":"false");
+    ["meet","elders","rare"].forEach(function(k){ document.getElementById(k).setAttribute("aria-pressed","false"); });
+    if(on){ sel=null; results=[]; resSet=null;
+      document.getElementById("q").value=""; setHits(""); }
+    else setHouse(null);
+    crumbs(); draw(); panel(); revealPanel();
+  };
+  document.getElementById("elders").onclick=function(){
+    pushState();
+    var on = panelMode!=="elders";
+    panelMode = on ? "elders" : "intro";
+    this.setAttribute("aria-pressed", on?"true":"false");
+    document.getElementById("houses").setAttribute("aria-pressed","false");
+    if(houseSel) setHouse(null);
+    document.getElementById("meet").setAttribute("aria-pressed","false");
+    document.getElementById("rare").setAttribute("aria-pressed","false");
+    if(on){ sel=null; results=[]; resSet=null;
+      document.getElementById("q").value=""; setHits(""); }
+    crumbs(); draw(); panel(); revealPanel();
+  };
+  document.getElementById("rare").onclick=function(){
+    pushState();
+    var on = panelMode!=="rare";
+    panelMode = on ? "rare" : "intro";
+    this.setAttribute("aria-pressed", on?"true":"false");
+    document.getElementById("houses").setAttribute("aria-pressed","false");
+    if(houseSel) setHouse(null);
+    document.getElementById("meet").setAttribute("aria-pressed","false");
+    document.getElementById("elders").setAttribute("aria-pressed","false");
+    if(on){ sel=null; results=[]; resSet=null;
+      document.getElementById("q").value=""; setHits(""); }
+    crumbs(); draw(); panel(); revealPanel();
+  };
+  [0,2].forEach(function(m){
+    document.getElementById("m"+m).onclick=function(){
+      mode=m; [0,2].forEach(function(k){ document.getElementById("m"+k).setAttribute("aria-pressed", k===m?"true":"false"); });
+      draw();
+    };
+  });
+  var q=document.getElementById("q"), tm=null;
+  q.addEventListener("input",function(){ clearTimeout(tm); tm=setTimeout(function(){ search(q.value); },140); });
+  document.addEventListener("keydown",function(e){
+    if(e.target.tagName==="INPUT") { if(e.key==="Escape"){ q.value=""; search(""); } return; }
+    if(e.key==="m"||e.key==="M"){ setDrawer(!drawerOpen); return; }
+    if(e.key==="Escape"){ if(drawerOpen){ setDrawer(false); return; } goBack(); }
+    if(e.key==="Backspace"){ e.preventDefault(); goBack(); }
+    if(e.key==="+"||e.key==="=") document.getElementById("zin").click();
+    if(e.key==="-") document.getElementById("zout").click();
+    if(e.key==="0") home(true);
+  });
+  document.getElementById("side").addEventListener("click",function(e){
+    if(e.target.closest("[data-open-menu]")){ document.getElementById("menu").click(); return; }
+    if(e.target.closest("[data-rare-open]")){ document.getElementById("rare").click(); return; }
+    if(e.target.closest("[data-elders-open]")){ document.getElementById("elders").click(); return; }
+    if(e.target.closest("[data-houses-open]")){ document.getElementById("houses").click(); return; }
+    var b=e.target.closest("[data-b1]"); if(!b) return;
+    var i=+b.dataset.b1;
+    var pts2=P.filter(function(p){return p.b1===i;});
+    var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    pts2.forEach(function(p){ x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x);y1=Math.max(y1,p.y); });
+    var s=Math.min(vw()/(x1-x0+160), vh()/(y1-y0+160));
+    goTo({s:s, x:vw()/2-((x0+x1)/2)*s, y:vh()/2-((y0+y1)/2)*s}, true);
+  });
+  window.addEventListener("resize",function(){ placeSearch(); resize(); });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){ tintCache={}; draw(); });
+}
+
+function loadImg(src){ return new Promise(function(res){ var i=new Image();
+  i.onload=function(){res(i);}; i.onerror=function(){res(null);}; i.src=src; }); }
+
+Promise.all([
+  fetch("alarifi_people.csv").then(function(r){return r.text();}).catch(function(){return "";}),
+  fetch("meta.json").then(function(r){return r.json();}).catch(function(){return null;}),
+  fetch("alarifi_houses.csv").then(function(r){return r.text();}).catch(function(){return "";}),
+  loadImg("tree.jpg"), loadImg("tint_main.png"), loadImg("tint_sub.png")
+]).then(function(v){
+  if(!v[0]||!v[1]){ document.getElementById("load").textContent="تعذّر تحميل البيانات."; return; }
+  poster=v[3]; tintImg[1]=v[4]; tintImg[2]=v[5]; tintCache={};
+  wire();
+  resize();
+  boot(parseCSV(v[0]), v[1], v[2]?parseCSV(v[2]):null);
+});
+})();
+</script>
+
+</html>
