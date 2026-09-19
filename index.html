@@ -285,7 +285,7 @@ h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; ma
           <button class="ico" id="zout" type="button" title="تصغير">−</button>
           <button class="ico" id="fit" type="button" title="ملء الإطار" aria-label="ملء الإطار">⤢</button>
         </div>
-        <div class="tag" id="ztag">×1.0 الفروع الأربعة</div>
+        <div class="tag" id="ztag">×1.0 الفروع الرئيسية</div>
       </div>
       <div class="loading" id="load">…تحميل الشجرة</div>
       </div>
@@ -511,7 +511,7 @@ function draw(){
   var lod=lodSet();
   document.getElementById("ztag").textContent =
     "×"+ar(view.s.toFixed(1))+"، "+
-    (lod.only==="main" ? "الفروع الأربعة" : lod.gen===8 ? "الفروع الأربعة عشر"
+    (lod.only==="main" ? "الفروع الرئيسية" : lod.gen===8 ? "الفروع الأربعة عشر"
       : lod.gen===9 ? "الجيل ٩" : lod.gen===11 ? "الأجيال ٩ إلى ١١" : "كل الأسماء الظاهرة");
 }
 
@@ -683,7 +683,8 @@ function select(p, fly){
 
 /* ---------- اللوحة ---------- */
 function esc(s){ return String(s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];}); }
-function ancGen(i){ return i<=6 ? i : 7; }
+function ancGen(i){ var a=META&&META.ancestors?META.ancestors[i]:null;
+  return (a&&a.gen!=null) ? a.gen : (i<=6?i:7); }
 function fullChain(p){
   var out=[], cur=p, g=0;
   while(cur && g++<40){ out.push({k:"p"+cur.row, name:cur.name, gen:cur.gen, x:cur.x, y:cur.y, node:cur});
@@ -956,8 +957,9 @@ function introHTML(){
     'الاسم وحده ما يكفي، ففي الشجرة ١٨٣ «خالد».</p>'+
     '<p class="hint">أو اضغط أي اسم في الرسم فتطلع بطاقته. '+
     'كبّر بالإصبعين أو بعجلة الفأرة لتبين الأسماء الأصغر.</p>'+
-    '<h3>الفروع الأربعة</h3>'+
-    '<p class="hint">اضغط الفرع ليتلوّن في الرسم.</p><div class="kids">'+
+    '<h3>الفروع الرئيسية</h3>'+
+    '<p class="hint">اضغط الفرع ليتلوّن في الرسم. '+
+    '<b>محمد</b> ابن سالم، و<b>خلف</b> و<b>سعد</b> و<b>ناصر</b> أبناء <b>جماز</b> أخيه، فهو عمّهم.</p><div class="kids">'+
     META.l1.map(function(n,i){
       var head=P.filter(function(p){return p.b1===i;});
       return '<button class="kid" type="button" data-b1="'+i+'"><i style="background:'+
