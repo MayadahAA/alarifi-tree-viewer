@@ -1,2 +1,5 @@
 Claude outputs/
+_to_delete/
 *.png
+!tint_main.png
+!tint_sub.png
