@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<script>(function(){try{var t=localStorage.getItem("arifiTheme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <title>مستعرض شجرة العرافا</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -66,6 +67,8 @@ input[type=search]:focus-visible, button:focus-visible{outline:2px solid var(--g
 button{font:inherit; color:var(--ink); cursor:pointer}
 .seg{display:inline-flex; border:1px solid var(--line2); border-radius:8px; overflow:hidden}
 .seg button{border:0; background:var(--surface); padding:8px 12px; font-size:13px; white-space:nowrap}
+.segfull{display:flex; width:100%}
+.segfull button{flex:1}
 .seg button[aria-pressed="true"]{background:var(--bark); color:var(--onbark)}
 :root{--onbark:#FFF8EA}
 :root[data-theme="dark"]{--onbark:#1B1711}
@@ -263,6 +266,12 @@ h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; ma
     <button class="dlist" id="houses" type="button" aria-pressed="false">البيوت<i id="nHouses"></i></button>
     <button class="dlist" id="elders" type="button" aria-pressed="false">كبار الأسرة الأحياء<i id="nElders"></i></button>
     <button class="dlist" id="rare" type="button" aria-pressed="false">الأسماء النادرة<i id="nRare"></i></button>
+    <div class="dhead" style="margin-top:18px"><span>المظهر</span></div>
+    <div class="seg segfull" role="group" aria-label="مظهر الواجهة">
+      <button id="tSystem" type="button" aria-pressed="true">تلقائي</button>
+      <button id="tLight" type="button" aria-pressed="false">فاتح</button>
+      <button id="tDark" type="button" aria-pressed="false">داكن</button>
+    </div>
     <div class="src">
       <h4>مصدر المعلومات</h4>
       كل ما في هذا المستعرض مستخرج آليًا من لوحة <b>«شجرة العريفي ١٤٤٥هـ»</b>، ولم تُضف إليه معلومة من خارجها.
@@ -312,6 +321,7 @@ var nameCount={}, tripleCount={}, genStat={}, elders=[];
 var houses=[], houseSel=null, houseMembers=null;
 var tintImg={}, tintCache={}, poster=null;
 var mode=2, showLabels=true, drawerOpen=false, sel=null, results=[], resSet=null, panelMode="intro", rareList=null;
+var THEME_KEY="arifiTheme";
 var meet=[null,null], meetSlot=0;
 var view={s:0.25,x:0,y:0}, anim=null;
 var cv=document.getElementById("cv"), ctx=cv.getContext("2d"), DPR=1;
@@ -1269,6 +1279,25 @@ function wire(){
       draw();
     };
   });
+  function themeVal(){ try{ var t=localStorage.getItem(THEME_KEY); return (t==="light"||t==="dark")?t:"system"; }catch(e){ return "system"; } }
+  function applyThemeAttr(t){
+    if(t==="light") document.documentElement.setAttribute("data-theme","light");
+    else if(t==="dark") document.documentElement.setAttribute("data-theme","dark");
+    else document.documentElement.removeAttribute("data-theme");
+  }
+  function markThemeBtns(t){
+    document.getElementById("tSystem").setAttribute("aria-pressed", t==="system"?"true":"false");
+    document.getElementById("tLight").setAttribute("aria-pressed", t==="light"?"true":"false");
+    document.getElementById("tDark").setAttribute("aria-pressed", t==="dark"?"true":"false");
+  }
+  function setTheme(t){
+    try{ if(t==="system") localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY,t); }catch(e){}
+    applyThemeAttr(t); markThemeBtns(t); tintCache={}; draw();
+  }
+  document.getElementById("tSystem").onclick=function(){ setTheme("system"); };
+  document.getElementById("tLight").onclick=function(){ setTheme("light"); };
+  document.getElementById("tDark").onclick=function(){ setTheme("dark"); };
+  markThemeBtns(themeVal());
   var q=document.getElementById("q"), tm=null;
   q.addEventListener("input",function(){ clearTimeout(tm); tm=setTimeout(function(){ search(q.value); },140); });
   document.addEventListener("keydown",function(e){
