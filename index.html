@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <style>
 :root{
-  --paper:#F7F3E8; --surface:#FFFDF7; --sunk:#F1EBDC; --canvasbg:#EFE9DA;
+  --paper:#F7F2E8; --surface:#FFFDF7; --sunk:#F1EBDC; --canvasbg:#EFE9DA;
   --ink:#221E18; --muted:#6E6357; --line:#E2DACA; --line2:#BCB09A;
   --bark:#6B4327; --gold:#8A6122; --gold-soft:#E7D7AE;
   --b0:#C8A23A; --b1:#C4602A; --b2:#2F7D4F; --b3:#B03A36;
@@ -989,7 +989,7 @@ function introHTML(){
     '<button type="button" data-open-menu="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">تفاصيل المصادر</button></p>';
 }
 function renderResults(el){
-  el.innerHTML='<h3>نتائج البحث</h3><div class="res">'+
+  el.innerHTML='<h3>نتائج البحث ('+ar(results.length)+')</h3><div class="res">'+
     results.slice(0,300).map(function(p){
       return '<button class="resrow" type="button" data-row="'+p.row+'">'+
         '<b>'+esc(p.name)+'</b> '+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
