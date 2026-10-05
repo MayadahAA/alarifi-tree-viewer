@@ -3,12 +3,12 @@ main = "feedback.js"
 compatibility_date = "2025-01-01"
 
 [vars]
-# عدّل الرابط/الموديل حسب منصتك (z.ai الدولية أو bigmodel.cn)
-GLM_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions"
+# Model API العادي (مو Coding Plan: سياسته تمنع الاستخدام العام). الموديل لازم يدعم function calling.
+GLM_URL = "https://api.z.ai/api/paas/v4/chat/completions"
 GLM_MODEL = "glm-4.5-flash"
 
 # الأسرار (ما تنكتب هنا):
 #   wrangler secret put TELEGRAM_TOKEN
 #   wrangler secret put TELEGRAM_CHAT_ID
 #   wrangler secret put TURNSTILE_SECRET
-#   wrangler secret put GLM_API_KEY
+#   wrangler secret put GLM_API_KEY   ← مفتاح Model API مخصص لهذا الـ Worker

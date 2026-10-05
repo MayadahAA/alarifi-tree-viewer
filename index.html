@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<script>(function(){try{var t=localStorage.getItem("arifiTheme");if(/^(light|dark|olive|clay|night)$/.test(t))document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem("arifiTheme");if(/^(light|dark)$/.test(t))document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <title>مستعرض شجرة العرافا</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,25 +35,6 @@
   --paper:#141210; --surface:#1D1A15; --sunk:#232019; --canvasbg:#201C16;
   --ink:#EFE8D8; --muted:#A1957F; --line:#332C22; --line2:#7A6D58;
   --bark:#A9754B; --gold:#D9B45B; --gold-soft:#4A3C22;
-  --b0:#D9B550; --b1:#E0763C; --b2:#4FA473; --b3:#D45A54;
-  --halo:#15120E; --ring:#F5EEDC; --pa:#5BA9DC; --pb:#E070B4;
-  --s0:#3FA855; --s3:#D273BE; --s4:#8A8DE0; --s5:#B0ACA8;
-}
-:root[data-theme="olive"]{
-  --paper:#F2F4EA; --surface:#FBFCF6; --sunk:#E8ECDB; --canvasbg:#E6EAD4;
-  --ink:#1E2418; --muted:#566049; --line:#D8DEC6; --line2:#7F8A6C;
-  --bark:#3F5A2E; --gold:#6B5A14; --gold-soft:#E3E6BC;
-}
-:root[data-theme="clay"]{
-  --paper:#FAF1E8; --surface:#FFFAF4; --sunk:#F3E4D4; --canvasbg:#F0E0CD;
-  --ink:#2A1A12; --muted:#6A503F; --line:#E8D5C0; --line2:#94755F;
-  --bark:#8A3B1E; --gold:#7A4A12; --gold-soft:#F0D5B0;
-}
-:root[data-theme="night"]{
-  color-scheme:dark;
-  --paper:#0F1420; --surface:#161C2B; --sunk:#1B2234; --canvasbg:#121827;
-  --ink:#E6EAF5; --muted:#9AA5BF; --line:#262F46; --line2:#5F6D8F;
-  --bark:#7FA1E0; --gold:#E0C068; --gold-soft:#2A3350;
   --b0:#D9B550; --b1:#E0763C; --b2:#4FA473; --b3:#D45A54;
   --halo:#15120E; --ring:#F5EEDC; --pa:#5BA9DC; --pb:#E070B4;
   --s0:#3FA855; --s3:#D273BE; --s4:#8A8DE0; --s5:#B0ACA8;
@@ -91,9 +72,6 @@ button{font:inherit; color:var(--ink); cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--bark); color:var(--onbark)}
 :root{--onbark:#FFF8EA}
 :root[data-theme="dark"]{--onbark:#1B1711}
-:root[data-theme="olive"]{--onbark:#F7FAEF}
-:root[data-theme="clay"]{--onbark:#FFF6EC}
-:root[data-theme="night"]{--onbark:#0F1420}
 @media (prefers-color-scheme: dark){:root:not([data-theme]){--onbark:#1B1711}}
 .ico{background:var(--surface); border:1px solid var(--line2); border-radius:8px; width:36px; height:36px;
   font-size:17px; line-height:1; display:inline-flex; align-items:center; justify-content:center}
@@ -175,7 +153,7 @@ canvas.drag{cursor:grabbing}
 .panelhead{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
 .pname{font-family:Amiri,serif; font-size:27px; font-weight:700; line-height:1.2}
 .plq{color:#A23A2E; font-size:13px}
-:root[data-theme="dark"] .plq, :root[data-theme="night"] .plq{color:#E08A78}
+:root[data-theme="dark"] .plq{color:#E08A78}
 @media (prefers-color-scheme: dark){:root:not([data-theme]) .plq{color:#E08A78}}
 .meta{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
 .badge{font-size:11.5px; border:1px solid var(--line2); border-radius:99px; padding:2px 9px; color:var(--muted);
@@ -282,6 +260,7 @@ dialog.chat[open]{display:flex}
 .bub.a{align-self:flex-end; background:var(--sunk); border:1px solid var(--line); border-end-end-radius:4px}
 .bub.a .resrow{display:block; width:100%; margin-top:6px; text-align:start}
 .bub.typing{color:var(--muted)}
+.bub.err .go{margin-top:8px; padding:6px 14px; border-radius:9px; border:1px solid var(--gold); background:var(--gold); color:var(--surface); font:inherit; cursor:pointer}
 .chform{display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--line); align-items:flex-end}
 .chform textarea{flex:1; min-height:0; height:40px; resize:none}
 .chform .go{padding:9px 16px; border-radius:9px; border:1px solid var(--gold); background:var(--gold); color:var(--surface)}
@@ -321,11 +300,6 @@ dialog.chat[open]{display:flex}
       <button id="tSystem" type="button" aria-pressed="true">تلقائي</button>
       <button id="tLight" type="button" aria-pressed="false">فاتح</button>
       <button id="tDark" type="button" aria-pressed="false">داكن</button>
-    </div>
-    <div class="seg segfull" role="group" aria-label="باليتات الألوان" style="margin-top:8px">
-      <button id="tOlive" type="button" aria-pressed="false">زيتوني</button>
-      <button id="tClay" type="button" aria-pressed="false">طيني</button>
-      <button id="tNight" type="button" aria-pressed="false">ليلي</button>
     </div>
     <div class="src">
       <h4>مصدر المعلومات</h4>
@@ -398,7 +372,7 @@ var nameCount={}, tripleCount={}, genStat={}, elders=[];
 var houses=[], houseSel=null, houseMembers=null;
 var tintImg={}, tintCache={}, poster=null;
 var mode=2, showLabels=true, drawerOpen=false, sel=null, results=[], resSet=null, panelMode="intro", rareList=null;
-var THEME_KEY="arifiTheme", THEMES=["light","dark","olive","clay","night"];
+var THEME_KEY="arifiTheme", THEMES=["light","dark"];
 var meet=[null,null], meetSlot=0;
 var view={s:0.25,x:0,y:0}, anim=null;
 var cv=document.getElementById("cv"), ctx=cv.getContext("2d"), DPR=1;
@@ -1002,7 +976,7 @@ function tsLoad(fn){
 function fbCaptcha(){
   tsLoad(function(){
     if(fbWidget!==null){ window.turnstile.reset(fbWidget); fbTok=""; return; }
-    fbWidget=window.turnstile.render("#fbCap",{sitekey:TS_KEY,callback:function(t){ fbTok=t; }});
+    fbWidget=window.turnstile.render("#fbCap",{sitekey:TS_KEY,appearance:"interaction-only",callback:function(t){ fbTok=t; }});
   });
 }
 document.getElementById("fbCancel").addEventListener("click",function(){ document.getElementById("fbDlg").close(); });
@@ -1011,7 +985,7 @@ document.getElementById("fbSend").addEventListener("click",function(){
   if(text.length<3){ msg.textContent="اكتب الملاحظة أول."; return; }
   if(!fbTok){ msg.textContent="انتظر التحقق ثواني."; return; }
   btn.disabled=true; msg.textContent="…جاري الإرسال";
-  fetch(FB_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+  fetch(FB_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},
     body:JSON.stringify({text:text,ref:fbRef,token:fbTok}),credentials:"omit",referrerPolicy:"no-referrer"})
     .then(function(r){ return r.json(); })
     .then(function(j){
@@ -1020,36 +994,104 @@ document.getElementById("fbSend").addEventListener("click",function(){
     }).catch(function(){ msg.textContent="تعذّر الاتصال."; btn.disabled=false; });
 });
 
-/* مساعد المحادثة: الـ LLM يستخرج فلاتر فقط، والمطابقة تتم هنا على بيانات الشجرة. */
-var CHAT_URL=FB_URL+"/chat", chTok="", chWidget=null, chF=null, chBusy=false, chSess="", chGen=0;
+/* مساعد المحادثة: GLM ما يشوف الشجرة. يطلب أدوات، وهنا تنفّذ على البيانات وترجع له النتيجة. */
+var CHAT_URL=FB_URL+"/chat", chTok="", chWidget=null, chMsgs=[], chBusy=false, chSess="", chGen=0, chCtl=null, chWait=[];
+/* حدود مشتركة: لازم تطابق MAX_MSGS و MAX_CALLS في worker/feedback.js */
+var CH_MAX_MSGS=40, CH_MAX_CALLS=5, CH_MAX_STEPS=6;
 function chHasKids(p){ return (kids[p.row]||[]).length>0 || p.st===2 || p.st===3; }
-function chMatch(f, drop){
+/* عرف الناس: «آل X» بدون أب يقصدون به الفرع الرئيسي لهذي الأسماء بدل الفرعي */
+var AL_MAIN={"محمد":0};   /* آل محمد = محمد بن سالم */
+/* «آل X» = الفرع الفرعي X (مثل آل سعد = سعد بن ناصر). يرجّع أرقام الفروع المطابقة. */
+function chSubs(nm, fa){
+  var out=[];
+  META.l2.forEach(function(n,i){
+    if(norm(n)===nm && (!fa || norm(META.l1[META.l2parent[i]])===fa)) out.push(i); });
+  return out;
+}
+function chUnder(p, row){   /* هل row من أجداده؟ */
+  var a=p.fa?byRow[p.fa]:null, g=0;
+  while(a && g++<40){ if(a.row===row) return true; a=a.fa?byRow[a.fa]:null; }
+  return false;
+}
+function chFromLine(p, nm, fa){   /* لغير الفروع الفرعية: هل أحد أجداده اسمه nm (وأبوه fa)؟ */
+  var a=p.fa?byRow[p.fa]:null, g=0;
+  while(a && g++<40){
+    if(norm(a.name)===nm){ var af=a.fa?byRow[a.fa]:null;
+      if(!fa || (af && norm(af.name)===fa)) return true; }
+    a=a.fa?byRow[a.fa]:null;
+  }
+  return false;
+}
+function chMatch(f){
   var nm=f.first_name?norm(f.first_name):"", fa=f.father_name?norm(f.father_name):"", gf=f.grandfather_name?norm(f.grandfather_name):"";
+  var ln=f.lineage_name?norm(f.lineage_name):"", lf=f.lineage_father?norm(f.lineage_father):"";
+  var alMain=(ln && !lf && AL_MAIN.hasOwnProperty(ln)) ? AL_MAIN[ln] : -1;
+  var subs=ln&&alMain<0?chSubs(ln,lf):[];
+  var dsc=typeof f.descendant_of==="number"?f.descendant_of:-1;
   return P.filter(function(p){
     if(nm && norm(p.name).indexOf(nm)!==0) return false;
     var pa=p.fa?byRow[p.fa]:null, ga=pa&&pa.fa?byRow[pa.fa]:null;
     if(fa && !(pa && norm(pa.name)===fa)) return false;
-    if(gf && !drop.gf && !(ga && norm(ga.name)===gf)) return false;
-    if(f.main_branch && !drop.br && META.l1[p.b1]!==f.main_branch) return false;
-    if(typeof f.alive==="boolean" && !drop.al && (p.st===0||p.st===1)!==f.alive) return false;
-    if(typeof f.married==="boolean" && !drop.ma && (p.st>=1&&p.st<=4)!==f.married) return false;
-    if(typeof f.children_count==="number" && !drop.ch && (kids[p.row]||[]).length!==f.children_count) return false;
-    if(typeof f.children_count!=="number" && typeof f.has_children==="boolean" && !drop.ch && chHasKids(p)!==f.has_children) return false;
+    if(gf && !(ga && norm(ga.name)===gf)) return false;
+    if(f.main_branch && META.l1[p.b1]!==f.main_branch) return false;
+    if(alMain>=0 && p.b1!==alMain) return false;
+    if(ln && alMain<0 && (subs.length ? subs.indexOf(p.b2)<0 : !chFromLine(p, ln, lf))) return false;
+    if(dsc>=0 && !chUnder(p, dsc)) return false;
+    if(typeof f.alive==="boolean" && (p.st===0||p.st===1)!==f.alive) return false;
+    if(typeof f.married==="boolean" && (p.st>=1&&p.st<=4)!==f.married) return false;
+    if(typeof f.children_count==="number"){ if((kids[p.row]||[]).length!==f.children_count) return false; }
+    else if(typeof f.has_children==="boolean" && chHasKids(p)!==f.has_children) return false;
     return true;
-  });
+  }).sort(function(a,b){ return a.gen-b.gen; });
 }
-function chUnderstood(f){
-  var a=[];
-  if(f.first_name) a.push("الاسم "+f.first_name);
-  if(f.father_name) a.push("أبوه "+f.father_name);
-  if(f.grandfather_name) a.push("جده "+f.grandfather_name);
-  if(f.main_branch) a.push("فرع "+f.main_branch);
-  if(typeof f.children_count==="number") a.push(f.children_count===0?"بلا أبناء":(f.children_count===1?"له ابن واحد":"له "+ar(f.children_count)+" أبناء"));
-  else if(typeof f.has_children==="boolean") a.push(f.has_children?"له أبناء":"بلا أبناء");
-  if(typeof f.alive==="boolean") a.push(f.alive?"حي":"متوفى");
-  if(typeof f.married==="boolean") a.push(f.married?"متزوج":"أعزب");
-  return a.join("، ");
-}
+
+/* ---- الأدوات: كل رقم يرجع لـ GLM محسوب هنا من البيانات ---- */
+function chInfo(p){ return {row:p.row, name:p.name, laqab:p.laqab||undefined, nasab:p.short, gen:p.gen, status:STN[p.st], sons:(kids[p.row]||[]).length}; }
+var CH_TOOLS={
+  find_people:function(f, seen){
+    if(typeof f.descendant_of==="number" && !byRow[f.descendant_of]) return {error:"descendant_of: ما فيه شخص بهذا الرقم"};
+    var out=chMatch(f), r={total:out.length, people:out.slice(0,10).map(chInfo)};
+    if(f.lineage_name && !f.lineage_father && !AL_MAIN.hasOwnProperty(norm(f.lineage_name))){
+      var ss=chSubs(norm(f.lineage_name),"");
+      if(ss.length>1) r.note="«آل "+f.lineage_name+"» يطابق أكثر من فرع: "+ss.map(function(i){ return META.l2[i]+" بن "+META.l1[META.l2parent[i]]; }).join("، ");
+    }
+    if(out.length<=5) out.forEach(function(p){ seen.push(p); });
+    return r;
+  },
+  get_person:function(a, seen){
+    var p=byRow[a.row]; if(!p) return {error:"ما فيه شخص بهذا الرقم"};
+    seen.push(p);
+    var ch=kids[p.row]||[], pa=p.fa?byRow[p.fa]:null;
+    return {row:p.row, name:p.name, laqab:p.laqab||undefined, gen:p.gen, status:STN[p.st],
+      full_nasab:fullChain(p).map(function(n){ return n.name; }).join(" بن "),
+      main_branch:META.l1[p.b1], sub_branch:META.l2[p.b2]+" بن "+META.l1[META.l2parent[p.b2]],
+      father_row:pa?pa.row:undefined,
+      sons:ch.slice(0,30).map(function(k){ return {row:k.row, name:k.name, status:STN[k.st], sons:(kids[k.row]||[]).length}; }),
+      sons_total:ch.length,
+      brothers:pa?(kids[pa.row]||[]).length-1:undefined,
+      descendants_total:descCount(p)};
+  },
+  count_descendants:function(a, seen){
+    var p=byRow[a.row]; if(!p) return {error:"ما فيه شخص بهذا الرقم"};
+    seen.push(p);
+    var by={}, gen={}, n=0, stack=[p];
+    STN.forEach(function(s){ by[s]=0; });
+    while(stack.length){ (kids[stack.pop().row]||[]).forEach(function(k){
+      n++; by[STN[k.st]]++; gen[k.gen]=(gen[k.gen]||0)+1; stack.push(k); }); }
+    return {of:p.short, total:n, by_status:by,
+      alive:by[STN[0]]+by[STN[1]], married_alive:by[STN[1]],
+      married_deceased:by[STN[2]]+by[STN[3]]+by[STN[4]], by_generation:gen};
+  },
+  relation:function(a, seen){
+    var x=byRow[a.row_a], y=byRow[a.row_b]; if(!x||!y) return {error:"رقم غير صحيح"};
+    seen.push(x); seen.push(y);
+    var m=meetPoint(x,y); if(!m) return {error:"ما وصلنا لجد مشترك في اللوحة"};
+    var da=x.gen-m.node.gen, db=y.gen-m.node.gen;
+    return {common_ancestor:m.A.slice(m.ai).map(function(n){ return n.name; }).slice(0,4).join(" بن "),
+      generations_from_a:da, generations_from_b:db, relation:relWord(da,db,x.name,y.name)};
+  }
+};
+
 function chBub(cls, text){
   var log=document.getElementById("chLog"), d=document.createElement("div");
   d.className="bub "+cls; d.textContent=text; log.appendChild(d); log.scrollTop=log.scrollHeight; return d;
@@ -1064,72 +1106,147 @@ function chCards(bub, list){
   });
   document.getElementById("chLog").scrollTop=1e9;
 }
-function chReply(f){
-  var u=chUnderstood(f);
-  if(!u){ chBub("a","ما فهمت وصف يفيد. اذكر الاسم، أو اسم أبيه، أو فرعه."); return; }
-  var steps=[{},{ch:1},{ch:1,ma:1},{ch:1,ma:1,al:1},{ch:1,ma:1,al:1,gf:1},{ch:1,ma:1,al:1,gf:1,br:1}], out=[], k=0;
-  for(;k<steps.length;k++){ out=chMatch(f,steps[k]); if(out.length) break; }
-  if(!out.length){ chBub("a","فهمت: "+u+".\nما لقيت أحد بهذي المواصفات. جرّب تغيّر أو تحذف شرط."); return; }
-  out.sort(function(a,b){ return a.gen-b.gen; });
-  var t="فهمت: "+u+".\n";
-  if(k) t+="ما فيه تطابق كامل، هذي أقرب النتائج.";
-  else if(out.length===1) t+="هذا هو؟";
-  else if(out.length<=5) t+=ar(out.length)+" مرشحين، أيهم تقصد؟";
-  else{
-    var ask=[]; if(!f.father_name) ask.push("اسم أبيه"); if(!f.main_branch) ask.push("فرعه (محمد/خلف/سعد/ناصر)");
-    if(typeof f.alive!=="boolean") ask.push("هل هو حي أو متوفى");
-    t+=ar(out.length)+" نتيجة، كثير. ضيّق عليّ"+(ask.length?": قل لي "+ask.join(" أو "):"")+".\nهذي أقدم ٥:";
-  }
-  chCards(chBub("a",t), out.slice(0,5));
-}
+/* الجلسة: "وقت_الانتهاء.توقيع". نعتبرها منتهية قبل وقتها بدقيقة عشان ما تنتهي وسط الطلب */
+function chSessOk(){ return !!chSess && Number(chSess.split(".")[0])-60000>Date.now(); }
+function chTokSet(t){ chTok=t; var w=chWait; chWait=[]; w.forEach(function(f){ f(t); }); }
 function chWidgetMount(){
-  if(chSess || chWidget!==null) return;
+  if(chSessOk() || chWidget!==null) return;
   tsLoad(function(){
-    if(chSess || chWidget!==null) return;
-    chWidget=window.turnstile.render("#chCap",{sitekey:TS_KEY,appearance:"interaction-only",callback:function(t){ chTok=t; }});
+    if(chSessOk() || chWidget!==null) return;
+    chWidget=window.turnstile.render("#chCap",{sitekey:TS_KEY,appearance:"interaction-only",
+      callback:chTokSet,
+      "expired-callback":function(){ chTok=""; window.turnstile.reset(chWidget); },
+      "error-callback":function(){ chTokSet(""); }});
   });
 }
+function chCapReset(){   /* token مستخدم أو مرفوض: نطلب واحد جديد فورًا */
+  chTok="";
+  if(chWidget!==null && window.turnstile) window.turnstile.reset(chWidget); else chWidgetMount();
+}
+/* يرجّع token صالح (أو "" لو فيه جلسة). ما نرسل أبدًا بـ token فاضي بدون جلسة. */
+function chToken(){
+  if(chSessOk()) return Promise.resolve("");
+  chSess="";
+  if(chTok) return Promise.resolve(chTok);
+  chWidgetMount();
+  return new Promise(function(ok, no){
+    var t=setTimeout(function(){ no("captcha"); },20000);
+    chWait.push(function(v){ clearTimeout(t); v?ok(v):no("captcha"); });
+  });
+}
+(function(){
+  var warm=function(){ tsLoad(function(){}); };
+  if(window.requestIdleCallback) requestIdleCallback(warm,{timeout:4000}); else setTimeout(warm,3000);
+  document.addEventListener("pointerover",function(e){ if(e.target.closest&&e.target.closest("[data-chat]")) chWidgetMount(); });
+})();
+var CH_HELLO="هلا! اسألني عن أي أحد في الشجرة، مثل:\n«أحمد بن محمد من آل سعد»\n«كم متزوج من ذرية سعود بن صقر؟»\n«وش القرابة بين فلان وفلان؟»";
+/* رسالة لكل نوع فشل. bad = الطلب نفسه مرفوض (خلل في التاريخ)، فالحل محادثة جديدة. */
+var CH_ERR={
+  captcha:"ما اكتمل التحقق. أكمله ثم اضغط «أعد الإرسال».",
+  llm:"المساعد ما ردّ هالمرة، جرّب مرة ثانية.",
+  network:"تعذّر الاتصال، تأكد من الإنترنت وجرّب مرة ثانية.",
+  bad_response:"وصل رد غير مفهوم، جرّب مرة ثانية.",
+  bad:"صار خلل في المحادثة. ابدأ محادثة جديدة من «جديدة»."
+};
 function chOpen(){
   document.getElementById("chDlg").showModal();
-  if(!document.getElementById("chLog").children.length) chBub("a","هلا! صف لي الشخص اللي تدور عليه، مثل:\n«اسمه أحمد بن محمد وله عيال ومن آل محمد».\nوتقدر تكمّل وتضيّق: «لا، هو متوفى».");
+  if(!document.getElementById("chLog").children.length) chBub("a",CH_HELLO);
   chWidgetMount();
   document.getElementById("chText").focus();
+}
+/* يحذف أقدم دور كامل (user وكل اللي بعده لين user التالي) لين المجموع يدخل في الحد.
+   الدور الحالي ما ينقص، فالـ tool_calls ونتائجها تبقى مع بعض دائمًا. */
+function chTrim(cur){
+  while(chMsgs.length && chMsgs.length+cur>CH_MAX_MSGS){
+    var i=1; while(i<chMsgs.length && chMsgs[i].role!=="user") i++;
+    chMsgs=chMsgs.slice(i);
+  }
+}
+function chPost(turn, token, signal){
+  chTrim(turn.length);
+  return fetch(CHAT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},signal:signal,
+    body:JSON.stringify({messages:chMsgs.concat(turn),sess:chSess,token:token}),credentials:"omit",referrerPolicy:"no-referrer"})
+    .then(function(r){ return r.json().catch(function(){ throw "bad_response"; }); },
+          function(e){ throw e&&e.name==="AbortError"?e:"network"; });
+}
+/* ينفّذ tool call واحد. أي arguments مرفوضة من الـ Worker أو مو JSON ترجع خطأ للموديل، ما ننفّذ بـ {}. */
+function chRun(c, seen){
+  if(c.error) return {error:c.error};
+  var f=CH_TOOLS[c.function&&c.function.name], args;
+  if(!f) return {error:"أداة غير معروفة"};
+  try{ args=JSON.parse(c.function.arguments||"{}"); }catch(e){ return {error:"arguments مو JSON صالح"}; }
+  if(!args || typeof args!=="object") return {error:"arguments لازم تكون object"};
+  try{ return f(args,seen); }catch(e){ return {error:"تعذّر التنفيذ"}; }
 }
 function chSend(){
   var ta=document.getElementById("chText"), text=ta.value.trim();
   if(chBusy || text.length<2) return;
-  chBusy=true; document.getElementById("chSend").disabled=true;
-  ta.value=""; chBub("u",text);
-  var typing=chBub("a typing","…"), gen=chGen, tries=0;
-  function done(){ chBusy=false; document.getElementById("chSend").disabled=false; ta.focus(); }
-  (function go(){
-    if(gen!==chGen){ done(); return; }
-    if(!chSess && !chTok && tries++<40){ setTimeout(go,250); return; }   /* أول رسالة فقط: انتظر التحقق */
-    fetch(CHAT_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text:text,prev:chF,sess:chSess,token:chTok}),credentials:"omit",referrerPolicy:"no-referrer"})
-      .then(function(r){ return r.json(); })
-      .then(function(j){
-        if(gen!==chGen) return;                       /* المستخدم بدأ محادثة جديدة، تجاهل الرد */
-        typing.remove();
-        if(j.ok){
-          if(j.sess){ chSess=j.sess; if(chWidget!==null){ window.turnstile.remove(chWidget); chWidget=null; } }
-          chF=j.filters||{}; chReply(chF);
-        }else{
-          if(j.err==="captcha"){ chSess=""; chTok=""; if(chWidget!==null){ window.turnstile.reset(chWidget); } else chWidgetMount(); }
-          chBub("a",j.err==="captcha"?"انتهى التحقق، أكمله ثم أعد رسالتك.":"ما اشتغل، جرّب مرة ثانية.");
+  var old=document.querySelector("#chLog .bub.err"); if(old) old.remove();
+  var gen=chGen, ctl=new AbortController(), btn=document.getElementById("chSend");
+  chBusy=true; chCtl=ctl; btn.disabled=true;
+  ta.value="";
+  var ubub=chBub("u",text), typing=chBub("a typing",chSessOk()||chTok?"أفكّر…":"أتحقق أول…");
+  /* الدور الحالي يتجمع هنا، وما يدخل chMsgs إلا لما يكتمل */
+  var turn=[{role:"user",content:text}], steps=0, seen=[];
+  var live=function(){ return gen===chGen; };
+  function done(){ if(!live()) return; chBusy=false; chCtl=null; btn.disabled=false; ta.focus(); }
+  function fail(err){
+    if(!live()) return;
+    ubub.remove(); typing.remove();
+    if(!ta.value) ta.value=text;   /* الرسالة ترجع للمربع، ما تضيع */
+    var b=chBub("a err",CH_ERR[err]||CH_ERR.network);
+    if(err!=="bad"){
+      var r=document.createElement("button"); r.type="button"; r.className="go"; r.textContent="أعد الإرسال";
+      r.addEventListener("click",function(){ chSend(); });
+      b.appendChild(document.createElement("br")); b.appendChild(r);
+    }
+    done();
+  }
+  function step(){
+    chToken().then(function(tok){
+      if(!live()) return;
+      if(tok) chTok="";   /* الـ token ينفع مرة وحدة، حتى لو انلغى الطلب */
+      return chPost(turn, tok, ctl.signal).then(function(j){
+        /* الجلسة عامة مو خاصة بالمحادثة، فنحفظها حتى لو الطلب صار قديم */
+        if(j.sess){ chSess=j.sess; if(chWidget!==null){ window.turnstile.remove(chWidget); chWidget=null; } }
+        if(!live()) return;
+        if(!j.ok){
+          if(j.err==="captcha") chSess="";
+          else if(tok && !j.sess) chCapReset();
+          throw j.err||"llm";
         }
-      })
-      .catch(function(){ if(gen===chGen){ typing.remove(); chBub("a","تعذّر الاتصال."); } })
-      .then(function(){ chTok=""; done(); });
-  })();
+        var m=j.message||{}, calls=(m.tool_calls||[]).slice(0,CH_MAX_CALLS);
+        if(calls.length && steps++<CH_MAX_STEPS){
+          turn.push({role:"assistant",content:m.content||"",tool_calls:calls.map(function(c){
+            return {id:c.id,type:"function",function:{name:c.function.name,arguments:c.function.arguments}}; })});
+          calls.forEach(function(c){ turn.push({role:"tool",tool_call_id:c.id,content:JSON.stringify(chRun(c,seen))}); });
+          typing.textContent="أدوّر في الشجرة…";
+          step(); return;
+        }
+        typing.remove();
+        var txt=m.content||"ما قدرت أجاوب، جرّب تصيغ السؤال بشكل ثاني.";
+        turn.push({role:"assistant",content:txt});
+        chMsgs=chMsgs.concat(turn);
+        var uniq=[]; seen.forEach(function(p){ if(uniq.indexOf(p)<0) uniq.push(p); });
+        chCards(chBub("a",txt), uniq.slice(0,5));
+        done();
+      });
+    }).catch(function(e){
+      if(e && e.name==="AbortError"){ if(!chSessOk() && !chTok) chCapReset(); return; }
+      if(e==="captcha") chCapReset();
+      fail(typeof e==="string"?e:"network");
+    });
+  }
+  step();
 }
 document.getElementById("chForm").addEventListener("submit",function(e){ e.preventDefault(); chSend(); });
 document.getElementById("chText").addEventListener("keydown",function(e){
   if(e.key==="Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); chSend(); } });
 document.getElementById("chClose").addEventListener("click",function(){ document.getElementById("chDlg").close(); });
 document.getElementById("chNew").addEventListener("click",function(){
-  chGen++; chF=null; chBusy=false; document.getElementById("chSend").disabled=false;
-  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة. صف لي الشخص."); });
+  chGen++; if(chCtl) chCtl.abort(); chCtl=null;
+  chMsgs=[]; chBusy=false; document.getElementById("chSend").disabled=false;
+  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة. وش تبي تعرف؟"); });
 function panel(){
   var el=document.getElementById("side");
   if(panelMode==="meet" && results.length){ renderResults(el); return; }
@@ -1549,7 +1666,7 @@ function wire(){
     else document.documentElement.removeAttribute("data-theme");
   }
   function markThemeBtns(t){
-    ["System","Light","Dark","Olive","Clay","Night"].forEach(function(n){
+    ["System","Light","Dark"].forEach(function(n){
       document.getElementById("t"+n).setAttribute("aria-pressed", t===n.toLowerCase()?"true":"false"); });
   }
   function setTheme(t){
@@ -1559,12 +1676,11 @@ function wire(){
   document.getElementById("tSystem").onclick=function(){ setTheme("system"); };
   document.getElementById("tLight").onclick=function(){ setTheme("light"); };
   document.getElementById("tDark").onclick=function(){ setTheme("dark"); };
-  ["Olive","Clay","Night"].forEach(function(n){
-    document.getElementById("t"+n).onclick=function(){ setTheme(n.toLowerCase()); }; });
   markThemeBtns(themeVal());
   var q=document.getElementById("q"), tm=null;
   q.addEventListener("input",function(){ clearTimeout(tm); tm=setTimeout(function(){ search(q.value); },140); });
   document.addEventListener("keydown",function(e){
+    if(e.target.tagName==="TEXTAREA" || e.target.closest("dialog[open]")) return;   /* الكتابة بالشات/الملاحظات ما تتأثر بالاختصارات */
     if(e.target.tagName==="INPUT") { if(e.key==="Escape"){ q.value=""; search(""); } return; }
     if(e.key==="m"||e.key==="M"){ setDrawer(!drawerOpen); return; }
     if(e.key==="Escape"){ if(drawerOpen){ setDrawer(false); return; } goBack(); }
