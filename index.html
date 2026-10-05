@@ -255,6 +255,18 @@ h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; ma
 .legend i{width:10px; height:10px; border-radius:3px; display:inline-block; margin-inline-end:3px; vertical-align:-1px}
 .loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   background:var(--canvasbg); color:var(--muted); font-size:14px; z-index:5}
+
+.fbbtn{margin-top:14px; background:none; border:1px dashed var(--line2); border-radius:9px; padding:8px 12px; color:var(--muted); font-size:13px; width:100%}
+.fbbtn:hover{color:var(--ink); border-color:var(--gold)}
+dialog.fb{direction:rtl; background:var(--surface); color:var(--ink); border:1px solid var(--line2); border-radius:12px; padding:18px; width:min(420px,92vw)}
+dialog.fb::backdrop{background:rgba(0,0,0,.45)}
+dialog.fb h3{margin:0 0 4px}
+dialog.fb p{margin:0 0 10px; font-size:13px; color:var(--muted)}
+dialog.fb textarea{width:100%; min-height:110px; box-sizing:border-box; padding:9px 11px; font:inherit; color:var(--ink); background:var(--sunk); border:1px solid var(--line); border-radius:9px; resize:vertical}
+dialog.fb .row{display:flex; gap:8px; justify-content:flex-end; margin-top:12px}
+dialog.fb .row button{padding:8px 16px; border-radius:9px; border:1px solid var(--line2); background:none}
+dialog.fb .row button.go{background:var(--gold); color:var(--surface); border-color:var(--gold)}
+dialog.fb .msg{min-height:1.2em; font-size:13px; margin-top:8px}
 </style>
 
 <div class="app">
@@ -334,6 +346,16 @@ h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; ma
   </div>
 </div>
 
+
+<dialog class="fb" id="fbDlg">
+  <h3>اقترح تصحيحًا</h3>
+  <p id="fbRef"></p>
+  <p>ملاحظتك مجهولة تمامًا: لا يُحفظ اسمك ولا رقمك ولا أي معلومة عنك.</p>
+  <textarea id="fbText" maxlength="1000" placeholder="وش التصحيح أو الملاحظة؟"></textarea>
+  <div id="fbCap" style="margin-top:10px"></div>
+  <div class="msg" id="fbMsg" role="status"></div>
+  <div class="row"><button type="button" id="fbCancel">إلغاء</button><button type="button" class="go" id="fbSend">إرسال</button></div>
+</dialog>
 <script>
 (function(){
 "use strict";
@@ -931,6 +953,42 @@ function rareHTML(){
   });
   return h;
 }
+
+/* ملاحظات مجهولة: تروح للـ Worker ثم تيليجرام. لا يُرسل إلا النص ورقم الشخص. */
+var FB_URL="https://alarifi-feedback.aburakan.workers.dev", TS_KEY="0x4AAAAAAFNhkyw3PnAzIkgY";
+var fbRef="", fbTok="", fbWidget=null;
+function fbOpen(p){
+  fbRef="#"+p.row+" · "+fullChain(p).map(function(n){return n.name;}).join(" بن ");
+  document.getElementById("fbRef").textContent=fbRef;
+  document.getElementById("fbText").value=""; document.getElementById("fbMsg").textContent="";
+  document.getElementById("fbSend").disabled=false;
+  document.getElementById("fbDlg").showModal();
+  fbCaptcha();
+}
+function fbCaptcha(){
+  function mount(){
+    if(fbWidget!==null){ window.turnstile.reset(fbWidget); fbTok=""; return; }
+    fbWidget=window.turnstile.render("#fbCap",{sitekey:TS_KEY,callback:function(t){ fbTok=t; }});
+  }
+  if(window.turnstile){ mount(); return; }
+  var sc=document.createElement("script");
+  sc.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  sc.onload=mount; document.head.appendChild(sc);
+}
+document.getElementById("fbCancel").addEventListener("click",function(){ document.getElementById("fbDlg").close(); });
+document.getElementById("fbSend").addEventListener("click",function(){
+  var btn=this, msg=document.getElementById("fbMsg"), text=document.getElementById("fbText").value.trim();
+  if(text.length<3){ msg.textContent="اكتب الملاحظة أول."; return; }
+  if(!fbTok){ msg.textContent="انتظر التحقق ثواني."; return; }
+  btn.disabled=true; msg.textContent="…جاري الإرسال";
+  fetch(FB_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({text:text,ref:fbRef,token:fbTok}),credentials:"omit",referrerPolicy:"no-referrer"})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j.ok){ msg.textContent="وصلت، يعطيك العافية."; setTimeout(function(){ document.getElementById("fbDlg").close(); },1200); }
+      else{ msg.textContent="ما انرسلت، جرّب مرة ثانية."; btn.disabled=false; window.turnstile.reset(fbWidget); fbTok=""; }
+    }).catch(function(){ msg.textContent="تعذّر الاتصال."; btn.disabled=false; });
+});
 function panel(){
   var el=document.getElementById("side");
   if(panelMode==="meet" && results.length){ renderResults(el); return; }
@@ -1005,7 +1063,9 @@ function panel(){
     (sib.length? '<h3>'+plural(sib.length,'أخ واحد','أخوان','إخوة','أخًا')+'</h3><div class="kids">'+sib.slice(0,40).map(function(k){
         return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+STCOL[k.st]+'"></i>'+
                '<b>'+esc(k.name)+'</b><u>'+STS[k.st]+'</u></button>'; }).join("")+'</div>' : '')+
-    '<p class="hint">ذريته في اللوحة <b>'+ar(descCount(p))+'</b> فردًا.</p>'+ factsHTML(p);
+    '<p class="hint">ذريته في اللوحة <b>'+ar(descCount(p))+'</b> فردًا.</p>'+ factsHTML(p)+
+    '<button type="button" class="fbbtn" data-fb>اقترح تصحيحًا على هذا الشخص</button>';
+  el.querySelector("[data-fb]").addEventListener("click",function(){ fbOpen(p); });
   el.querySelectorAll("[data-row]").forEach(function(b){
     b.addEventListener("click",function(){
       var r=+b.dataset.row, pp=byRow[r]; if(!pp) return;
