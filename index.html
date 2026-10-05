@@ -267,6 +267,9 @@ dialog.fb .row{display:flex; gap:8px; justify-content:flex-end; margin-top:12px}
 dialog.fb .row button{padding:8px 16px; border-radius:9px; border:1px solid var(--line2); background:none}
 dialog.fb .row button.go{background:var(--gold); color:var(--surface); border-color:var(--gold)}
 dialog.fb .msg{min-height:1.2em; font-size:13px; margin-top:8px}
+
+dialog.fb .cres{display:flex; flex-direction:column; gap:6px; margin-top:12px}
+.chatbtn{display:block; width:100%; margin:0 0 14px; padding:10px 12px; background:var(--gold-soft); color:var(--ink); border:1px solid var(--gold); border-radius:9px; font-size:14px; text-align:start}
 </style>
 
 <div class="app">
@@ -290,12 +293,8 @@ dialog.fb .msg{min-height:1.2em; font-size:13px; margin-top:8px}
       <span>ابدأ من هنا</span>
       <button class="ico" id="dclose" type="button" aria-label="إغلاق">×</button>
     </div>
-    <button class="dbig" id="dsearch" type="button">
-      <b>دوّر على شخص</b><span>بالاسم أو بالنسب: خالد بن محمد بن سعد</span></button>
     <button class="dbig" id="meet" type="button" aria-pressed="false">
       <b>وين نلتقي؟</b><span>اختر شخصين واعرف جدّهما المشترك</span></button>
-    <button class="dbig" id="dbrowse" type="button">
-      <b>تصفّح الشجرة</b><span>كبّر وتنقّل، والأسماء تظهر بالتدريج</span></button>
     <div class="dhead" style="margin-top:18px"><span>قوائم</span></div>
     <button class="dlist" id="houses" type="button" aria-pressed="false">البيوت<i id="nHouses"></i></button>
     <button class="dlist" id="elders" type="button" aria-pressed="false">كبار الأسرة الأحياء<i id="nElders"></i></button>
@@ -355,6 +354,16 @@ dialog.fb .msg{min-height:1.2em; font-size:13px; margin-top:8px}
   <div id="fbCap" style="margin-top:10px"></div>
   <div class="msg" id="fbMsg" role="status"></div>
   <div class="row"><button type="button" id="fbCancel">إلغاء</button><button type="button" class="go" id="fbSend">إرسال</button></div>
+</dialog>
+
+<dialog class="fb" id="chDlg">
+  <h3>من تقصد؟</h3>
+  <p>صف الشخص بكلامك، مثل: «اسمه أحمد بن محمد وله عيال ومن آل محمد». أطلع لك المرشحين من الشجرة.</p>
+  <textarea id="chText" maxlength="300" style="min-height:70px" placeholder="اسمه… ابن… من آل…"></textarea>
+  <div id="chCap" style="margin-top:10px"></div>
+  <div class="msg" id="chMsg" role="status"></div>
+  <div class="cres" id="chRes"></div>
+  <div class="row"><button type="button" id="chClose">إغلاق</button><button type="button" class="go" id="chSend">ابحث</button></div>
 </dialog>
 <script>
 (function(){
@@ -965,15 +974,17 @@ function fbOpen(p){
   document.getElementById("fbDlg").showModal();
   fbCaptcha();
 }
-function fbCaptcha(){
-  function mount(){
-    if(fbWidget!==null){ window.turnstile.reset(fbWidget); fbTok=""; return; }
-    fbWidget=window.turnstile.render("#fbCap",{sitekey:TS_KEY,callback:function(t){ fbTok=t; }});
-  }
-  if(window.turnstile){ mount(); return; }
+function tsLoad(fn){
+  if(window.turnstile){ fn(); return; }
   var sc=document.createElement("script");
   sc.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-  sc.onload=mount; document.head.appendChild(sc);
+  sc.onload=fn; document.head.appendChild(sc);
+}
+function fbCaptcha(){
+  tsLoad(function(){
+    if(fbWidget!==null){ window.turnstile.reset(fbWidget); fbTok=""; return; }
+    fbWidget=window.turnstile.render("#fbCap",{sitekey:TS_KEY,callback:function(t){ fbTok=t; }});
+  });
 }
 document.getElementById("fbCancel").addEventListener("click",function(){ document.getElementById("fbDlg").close(); });
 document.getElementById("fbSend").addEventListener("click",function(){
@@ -988,6 +999,75 @@ document.getElementById("fbSend").addEventListener("click",function(){
       if(j.ok){ msg.textContent="وصلت، يعطيك العافية."; setTimeout(function(){ document.getElementById("fbDlg").close(); },1200); }
       else{ msg.textContent="ما انرسلت، جرّب مرة ثانية."; btn.disabled=false; window.turnstile.reset(fbWidget); fbTok=""; }
     }).catch(function(){ msg.textContent="تعذّر الاتصال."; btn.disabled=false; });
+});
+
+/* مساعد "من تقصد؟": الـ LLM يستخرج فلاتر فقط، والمطابقة تتم هنا على بيانات الشجرة. */
+var CHAT_URL=FB_URL+"/chat", chTok="", chWidget=null;
+function chHasKids(p){ return (kids[p.row]||[]).length>0 || p.st===2 || p.st===3; }
+function chMatch(f, drop){
+  var nm=f.first_name?norm(f.first_name):"", fa=f.father_name?norm(f.father_name):"", gf=f.grandfather_name?norm(f.grandfather_name):"";
+  return P.filter(function(p){
+    if(nm && norm(p.name).indexOf(nm)!==0) return false;
+    var pa=p.fa?byRow[p.fa]:null, ga=pa&&pa.fa?byRow[pa.fa]:null;
+    if(fa && !(pa && norm(pa.name)===fa)) return false;
+    if(gf && !drop.gf && !(ga && norm(ga.name)===gf)) return false;
+    if(f.main_branch && !drop.br && META.l1[p.b1]!==f.main_branch) return false;
+    if(typeof f.alive==="boolean" && !drop.al && (p.st===0||p.st===1)!==f.alive) return false;
+    if(typeof f.married==="boolean" && !drop.ma && (p.st>=1&&p.st<=4)!==f.married) return false;
+    if(typeof f.has_children==="boolean" && !drop.ch && chHasKids(p)!==f.has_children) return false;
+    return true;
+  });
+}
+function chUnderstood(f){
+  var a=[];
+  if(f.first_name) a.push("الاسم "+f.first_name);
+  if(f.father_name) a.push("أبوه "+f.father_name);
+  if(f.grandfather_name) a.push("جده "+f.grandfather_name);
+  if(f.main_branch) a.push("فرع "+f.main_branch);
+  if(typeof f.has_children==="boolean") a.push(f.has_children?"له أبناء":"بلا أبناء");
+  if(typeof f.alive==="boolean") a.push(f.alive?"حي":"متوفى");
+  if(typeof f.married==="boolean") a.push(f.married?"متزوج":"أعزب");
+  return a.join("، ");
+}
+function chShow(f){
+  var msg=document.getElementById("chMsg"), box=document.getElementById("chRes");
+  var steps=[{},{ch:1},{ch:1,ma:1},{ch:1,ma:1,al:1},{ch:1,ma:1,al:1,gf:1},{ch:1,ma:1,al:1,gf:1,br:1}], out=[], k=0;
+  for(;k<steps.length;k++){ out=chMatch(f,steps[k]); if(out.length) break; }
+  var u=chUnderstood(f);
+  if(!u){ msg.textContent="ما قدرت أفهم وصف يفيد، اذكر الاسم أو اسم الأب."; box.innerHTML=""; return; }
+  out.sort(function(a,b){ return a.gen-b.gen; });
+  msg.textContent="فهمت: "+u+". "+(!out.length?"ما لقيت أحد.":
+    (k?"ما فيه تطابق كامل، هذي أقرب النتائج. ":"")+(out.length>8?"أول ٨ من "+ar(out.length)+".":ar(out.length)+" نتيجة."));
+  box.innerHTML=out.slice(0,8).map(function(p){
+    return '<button class="resrow" type="button" data-row="'+p.row+'"><b>'+esc(p.name)+'</b> '+
+      (p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
+      '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، '+STS[p.st]+'</span></button>'; }).join("");
+  box.querySelectorAll("[data-row]").forEach(function(b){
+    b.addEventListener("click",function(){ var pp=byRow[+b.dataset.row]; if(!pp) return;
+      document.getElementById("chDlg").close(); select(pp,true); revealPanel(); });
+  });
+}
+function chOpen(){
+  document.getElementById("chMsg").textContent=""; document.getElementById("chRes").innerHTML="";
+  document.getElementById("chSend").disabled=false;
+  document.getElementById("chDlg").showModal();
+  tsLoad(function(){
+    if(chWidget!==null){ window.turnstile.reset(chWidget); chTok=""; return; }
+    chWidget=window.turnstile.render("#chCap",{sitekey:TS_KEY,callback:function(t){ chTok=t; }});
+  });
+}
+document.getElementById("chClose").addEventListener("click",function(){ document.getElementById("chDlg").close(); });
+document.getElementById("chSend").addEventListener("click",function(){
+  var btn=this, msg=document.getElementById("chMsg"), text=document.getElementById("chText").value.trim();
+  if(text.length<2){ msg.textContent="اكتب وصف الشخص أول."; return; }
+  if(!chTok){ msg.textContent="انتظر التحقق ثواني."; return; }
+  btn.disabled=true; msg.textContent="…أفكّر";
+  fetch(CHAT_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({text:text,token:chTok}),credentials:"omit",referrerPolicy:"no-referrer"})
+    .then(function(r){ return r.json(); })
+    .then(function(j){ if(j.ok) chShow(j.filters||{}); else msg.textContent="ما اشتغل، جرّب مرة ثانية."; })
+    .catch(function(){ msg.textContent="تعذّر الاتصال."; })
+    .then(function(){ btn.disabled=false; if(chWidget!==null){ window.turnstile.reset(chWidget); chTok=""; } });
 });
 function panel(){
   var el=document.getElementById("side");
@@ -1030,7 +1110,7 @@ function panel(){
     return;
   }
   if(results.length && !sel){ renderResults(el); return; }
-  if(!sel){ el.innerHTML = introHTML(); return; }
+  if(!sel){ el.innerHTML = introHTML(); var cb=el.querySelector("[data-chat]"); if(cb) cb.addEventListener("click",chOpen); return; }
   var p=sel, ch=kids[p.row]||[];
   var sib = p.fa ? (kids[p.fa]||[]).filter(function(x){return x!==p;}) : [];
   var ch2=chainOf(p);
@@ -1100,7 +1180,8 @@ function descCount(p){
   return n;
 }
 function introHTML(){
-  return '<h3>دوّر على اسمك</h3>'+
+  return '<button type="button" class="chatbtn" data-chat>ما تذكر النسب كامل؟ صف الشخص بكلامك</button>'+
+    '<h3>دوّر على اسمك</h3>'+
     '<p class="hint">اكتب الاسم مع أبيه وجدّه، مثل: <b>خالد بن محمد بن سعد</b>. '+
     'الاسم وحده ما يكفي، ففي الشجرة ١٨٣ «خالد».</p>'+
     '<p class="hint">أو اضغط أي اسم في الرسم فتطلع بطاقته. '+
@@ -1340,23 +1421,6 @@ function wire(){
   document.getElementById("menu").onclick=function(){ setDrawer(!drawerOpen); };
   document.getElementById("dclose").onclick=function(){ setDrawer(false); };
   document.getElementById("scrim").onclick=function(){ setDrawer(false); };
-  document.getElementById("dsearch").onclick=function(){
-    pushState();
-    setDrawer(false);
-    panelMode="intro"; sel=null; results=[]; resSet=null;
-    ["houses","meet","elders","rare"].forEach(function(k){ document.getElementById(k).setAttribute("aria-pressed","false"); });
-    if(houseSel) setHouse(null); else { draw(); panel(); }
-    var q=document.getElementById("q"); q.focus(); q.select();
-  };
-  document.getElementById("dbrowse").onclick=function(){
-    pushState();
-    setDrawer(false);
-    panelMode="intro"; sel=null; results=[]; resSet=null; meet=[null,null];
-    document.getElementById("q").value=""; setHits("");
-    ["houses","meet","elders","rare"].forEach(function(k){ document.getElementById(k).setAttribute("aria-pressed","false"); });
-    houseSel=null; houseMembers=null;
-    crumbs(); panel(); home(true);
-  };
   ["houses","meet","elders","rare"].forEach(function(k){
     document.getElementById(k).addEventListener("click",function(){ setDrawer(false); });
   });
