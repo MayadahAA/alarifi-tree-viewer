@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<script>(function(){try{var t=localStorage.getItem("arifiTheme");if(/^(light|dark|olive|clay|night)$/.test(t))document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem("arifiTheme");if(/^(light|dark)$/.test(t))document.documentElement.setAttribute("data-theme",t);else localStorage.removeItem("arifiTheme");}catch(e){}})();</script>
 <title>مستعرض شجرة العرافا</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,25 +39,6 @@
   --halo:#15120E; --ring:#F5EEDC; --pa:#5BA9DC; --pb:#E070B4;
   --s0:#3FA855; --s3:#D273BE; --s4:#8A8DE0; --s5:#B0ACA8;
 }
-:root[data-theme="olive"]{
-  --paper:#F2F4EA; --surface:#FBFCF6; --sunk:#E8ECDB; --canvasbg:#E6EAD4;
-  --ink:#1E2418; --muted:#566049; --line:#D8DEC6; --line2:#7F8A6C;
-  --bark:#3F5A2E; --gold:#6B5A14; --gold-soft:#E3E6BC;
-}
-:root[data-theme="clay"]{
-  --paper:#FAF1E8; --surface:#FFFAF4; --sunk:#F3E4D4; --canvasbg:#F0E0CD;
-  --ink:#2A1A12; --muted:#6A503F; --line:#E8D5C0; --line2:#94755F;
-  --bark:#8A3B1E; --gold:#7A4A12; --gold-soft:#F0D5B0;
-}
-:root[data-theme="night"]{
-  color-scheme:dark;
-  --paper:#0F1420; --surface:#161C2B; --sunk:#1B2234; --canvasbg:#121827;
-  --ink:#E6EAF5; --muted:#9AA5BF; --line:#262F46; --line2:#5F6D8F;
-  --bark:#7FA1E0; --gold:#E0C068; --gold-soft:#2A3350;
-  --b0:#D9B550; --b1:#E0763C; --b2:#4FA473; --b3:#D45A54;
-  --halo:#15120E; --ring:#F5EEDC; --pa:#5BA9DC; --pb:#E070B4;
-  --s0:#3FA855; --s3:#D273BE; --s4:#8A8DE0; --s5:#B0ACA8;
-}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0; background:var(--paper); color:var(--ink); direction:rtl; overflow:hidden;
@@ -76,7 +57,8 @@ body{margin:0; background:var(--paper); color:var(--ink); direction:rtl; overflo
   transition:background .15s, color .15s}
 .credit:hover{background:var(--gold); color:var(--paper)}
 @media(max-width:820px){ .credit{font-size:12px; padding:6px 10px} }
-.searchwrap{position:relative; flex:1 1 300px; min-width:180px}
+.searchwrap{display:flex; align-items:center; gap:6px; flex:1 1 300px; min-width:180px}
+.searchfield{position:relative; flex:1 1 auto; min-width:0}
 input[type=search]{width:100%; padding:9px 13px; font:inherit; color:var(--ink);
   background:var(--sunk); border:1px solid var(--line2); border-radius:8px}
 .searchwrap.hasHits input[type=search]{padding-inline-end:104px}
@@ -91,13 +73,13 @@ button{font:inherit; color:var(--ink); cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--bark); color:var(--onbark)}
 :root{--onbark:#FFF8EA}
 :root[data-theme="dark"]{--onbark:#1B1711}
-:root[data-theme="olive"]{--onbark:#F7FAEF}
-:root[data-theme="clay"]{--onbark:#FFF6EC}
-:root[data-theme="night"]{--onbark:#0F1420}
 @media (prefers-color-scheme: dark){:root:not([data-theme]){--onbark:#1B1711}}
 .ico{background:var(--surface); border:1px solid var(--line2); border-radius:8px; width:36px; height:36px;
   font-size:17px; line-height:1; display:inline-flex; align-items:center; justify-content:center}
 .ico:hover{border-color:var(--gold)}
+.assistant-trigger{width:auto; min-width:76px; height:38px; flex:0 0 auto; gap:5px; padding-inline:10px; font-size:13px; white-space:nowrap}
+.assistant-trigger .spark{font-size:16px; line-height:1}
+.theme-icons button{display:inline-flex; align-items:center; justify-content:center; min-width:40px; padding:7px 9px; font-size:17px}
 
 .scrim{position:fixed; inset:0; background:rgba(20,16,10,.42); z-index:20}
 .drawer{position:fixed; inset-block:0; inset-inline-start:0; width:min(330px,86vw); z-index:21;
@@ -125,6 +107,7 @@ button{font:inherit; color:var(--ink); cursor:pointer}
 .src{margin-top:20px; border-top:1px solid var(--line); padding-top:12px;
   font-size:11.5px; line-height:1.85; color:var(--muted)}
 .src h4{margin:0 0 6px; font-size:11.5px; letter-spacing:.1em; color:var(--gold); font-weight:600}
+.src h4:focus-visible{outline:2px solid var(--gold); outline-offset:3px}
 .src b{color:var(--ink); font-weight:600}
 .src p{margin:8px 0 0}
 .body{flex:1 1 auto; display:flex; min-height:0}
@@ -164,6 +147,8 @@ canvas.drag{cursor:grabbing}
   .searchslot .searchwrap{flex:none; width:100%; order:0}
   .seg button{padding:7px 10px; font-size:12px}
   .ico{width:34px; height:34px}
+  .assistant-trigger{width:36px; min-width:36px; height:36px; padding:0}
+  .assistant-trigger span:last-child{display:none}
   .pname{font-size:24px}
 }
 .backbtn[hidden]{display:none}
@@ -175,12 +160,18 @@ canvas.drag{cursor:grabbing}
 .panelhead{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
 .pname{font-family:Amiri,serif; font-size:27px; font-weight:700; line-height:1.2}
 .plq{color:#A23A2E; font-size:13px}
-:root[data-theme="dark"] .plq, :root[data-theme="night"] .plq{color:#E08A78}
+:root[data-theme="dark"] .plq{color:#E08A78}
 @media (prefers-color-scheme: dark){:root:not([data-theme]) .plq{color:#E08A78}}
 .meta{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
 .badge{font-size:11.5px; border:1px solid var(--line2); border-radius:99px; padding:2px 9px; color:var(--muted);
   display:inline-flex; gap:5px; align-items:center}
 .badge i{width:9px; height:9px; border-radius:50%; display:inline-block}
+.status-provenance{display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;
+  margin:7px 0 12px; font-size:11px; line-height:1.6; color:var(--muted)}
+.status-date{font-size:10.5px; color:var(--muted); font-weight:400; white-space:normal}
+.source-action{display:inline-flex; align-items:center; gap:4px; background:none; border:0; padding:0;
+  color:var(--gold); font:inherit; font-weight:600; border-bottom:1px dotted currentColor; white-space:nowrap}
+.source-action:hover{color:var(--ink)}
 .nasab{font-family:Amiri,serif; font-size:16px; line-height:2; margin-top:12px;
   background:var(--sunk); border:1px solid var(--line); border-radius:9px; padding:10px 12px}
 .nasab button{background:none; border:0; padding:0 1px; font:inherit; color:var(--ink);
@@ -201,6 +192,14 @@ h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; ma
 .facts{margin-top:14px; border-top:1px solid var(--line); padding-top:10px}
 .facts div{font-size:13px; line-height:1.9; color:var(--muted)}
 .facts b{color:var(--ink); font-weight:600}
+.sectionhead{display:flex; align-items:center; gap:7px; margin:16px 0 6px}
+.sectionhead h3{margin:0}
+.sectioncount{display:inline-flex; align-items:center; justify-content:center; min-width:21px; height:21px;
+  padding:0 6px; border-radius:99px; background:var(--gold-soft); color:var(--ink); font-size:11.5px;
+  font-weight:600; font-variant-numeric:tabular-nums}
+.relation-note{margin:10px 0 0; color:var(--muted); font-size:12px; line-height:1.8}
+.facts summary{cursor:pointer; color:var(--muted); font-size:12px; font-weight:600; letter-spacing:.04em}
+.facts[open] summary{margin-bottom:6px}
 .hrow{display:flex; align-items:baseline; gap:8px; width:100%; text-align:start; font:inherit;
   background:none; border:0; padding:8px 6px; border-radius:7px; border-bottom:1px dashed var(--line)}
 .hrow:hover{background:var(--sunk)}
@@ -250,9 +249,11 @@ h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; ma
 .blank{color:var(--muted); font-size:13.5px; padding:18px 4px; text-align:center}
 .hint{font-size:12px; color:var(--muted); margin:10px 0 0; line-height:1.8}
 .hint b{color:var(--ink); font-weight:600}
-.legend{display:flex; gap:8px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:14px;
+.legend{display:flex; gap:8px 12px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:14px;
   border-top:1px solid var(--line); padding-top:10px}
 .legend i{width:10px; height:10px; border-radius:3px; display:inline-block; margin-inline-end:3px; vertical-align:-1px}
+.legend-context{flex:1 0 100%; margin:0; color:var(--ink); font-size:12px}
+.legend>span{display:inline-flex; align-items:baseline; gap:2px 4px; min-width:0}
 .loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   background:var(--canvasbg); color:var(--muted); font-size:14px; z-index:5}
 
@@ -270,6 +271,9 @@ dialog.fb .msg{min-height:1.2em; font-size:13px; margin-top:8px}
 
 dialog.fb .cres{display:flex; flex-direction:column; gap:6px; margin-top:12px}
 .chatbtn{display:block; width:100%; margin:0 0 14px; padding:10px 12px; background:var(--gold-soft); color:var(--ink); border:1px solid var(--gold); border-radius:9px; font-size:14px; text-align:start}
+.chatbtn b,.chatbtn span{display:block}
+.chatbtn b{font-size:14px}
+.chatbtn span{margin-top:3px; color:var(--muted); font-size:12px; line-height:1.7}
 
 dialog.chat{padding:0; display:none; flex-direction:column; height:min(600px,86vh)}
 dialog.chat[open]{display:flex}
@@ -295,8 +299,11 @@ dialog.chat[open]{display:flex}
     <button class="ico" id="menu" type="button" aria-label="القوائم" aria-expanded="false">☰</button>
     <div class="brand">مستعرض شجرة العرافا<small>٤٥٨٨ فردًا في ١٨ جيلًا</small></div>
     <div class="searchwrap">
-      <input type="search" id="q" placeholder="ابحث باسم، أو بنسب: خالد بن محمد بن سعد" autocomplete="off" aria-label="بحث">
-      <span class="hitcount" id="hits"></span>
+      <div class="searchfield">
+        <input type="search" id="q" placeholder="ابحث باسم، أو بنسب: خالد بن محمد بن سعد" autocomplete="off" aria-label="بحث">
+        <span class="hitcount" id="hits"></span>
+      </div>
+      <button class="ico assistant-trigger" id="assistantTrigger" type="button" aria-label="اسأل المساعد" title="اسأل المساعد"><span class="spark" aria-hidden="true">✦</span><span>اسأل</span></button>
     </div>
     <div class="seg" role="group" aria-label="طبقة التلوين">
       <button id="m0" type="button" aria-pressed="false">الرسم الأصلي</button>
@@ -314,26 +321,21 @@ dialog.chat[open]{display:flex}
       <b>وين نلتقي؟</b><span>اختر شخصين واعرف جدّهما المشترك</span></button>
     <div class="dhead" style="margin-top:18px"><span>قوائم</span></div>
     <button class="dlist" id="houses" type="button" aria-pressed="false">البيوت<i id="nHouses"></i></button>
-    <button class="dlist" id="elders" type="button" aria-pressed="false">كبار الأسرة الأحياء<i id="nElders"></i></button>
+    <button class="dlist" id="elders" type="button" aria-pressed="false">كبار الأسرة في اللوحة<i id="nElders"></i></button>
     <button class="dlist" id="rare" type="button" aria-pressed="false">الأسماء النادرة<i id="nRare"></i></button>
     <div class="dhead" style="margin-top:18px"><span>المظهر</span></div>
-    <div class="seg segfull" role="group" aria-label="مظهر الواجهة">
-      <button id="tSystem" type="button" aria-pressed="true">تلقائي</button>
-      <button id="tLight" type="button" aria-pressed="false">فاتح</button>
-      <button id="tDark" type="button" aria-pressed="false">داكن</button>
-    </div>
-    <div class="seg segfull" role="group" aria-label="باليتات الألوان" style="margin-top:8px">
-      <button id="tOlive" type="button" aria-pressed="false">زيتوني</button>
-      <button id="tClay" type="button" aria-pressed="false">طيني</button>
-      <button id="tNight" type="button" aria-pressed="false">ليلي</button>
+    <div class="seg segfull theme-icons" role="group" aria-label="مظهر الواجهة">
+      <button id="tSystem" type="button" aria-pressed="true" aria-label="المظهر التلقائي" title="تلقائي">◐</button>
+      <button id="tLight" type="button" aria-pressed="false" aria-label="المظهر الفاتح" title="فاتح">☀</button>
+      <button id="tDark" type="button" aria-pressed="false" aria-label="المظهر الداكن" title="داكن">☾</button>
     </div>
     <div class="src">
-      <h4>مصدر المعلومات</h4>
-      كل ما في هذا المستعرض مستخرج آليًا من لوحة <b>«شجرة العريفي ١٤٤٥هـ»</b>، ولم تُضف إليه معلومة من خارجها.
-      <p><b>تنفيذ وتحقيق اللوحة:</b> صندوق أسرة العريفي، حُرّرت في ١/١/١٤٤٥هـ الموافق ١٩/٧/٢٠٢٣م.</p>
-      <p><b>ومصادرها كما ذكرتها:</b> شجرات النسب المحققة في ١/١/١٤٣١هـ و٢٨/٣/١٤٠٨هـ و١٣٩١هـ، وكبار السن من الأسرة.</p>
-      <p>الحالات كما في اللوحة يوم حُرّرت، ومضى عليها أكثر من ثلاث سنوات.
-      وأسماء البيوت المُعلَّمة <em style="font-style:normal;color:var(--gold)">مقترحة</em> تحتاج تأكيدكم.</p>
+      <h4 id="sourceDetails" tabindex="-1">تفاصيل المصدر</h4>
+      كل ما في هذا المستعرض مستخرج آليًا من لوحة <b>«شجرة العريفي ١٤٤٥هـ»</b>، ولم تُضف إليه معلومة من خارجها
+      <p><b>تنفيذ وتحقيق اللوحة:</b> صندوق أسرة العريفي، حُرّرت في ١/١/١٤٤٥هـ الموافق ١٩/٧/٢٠٢٣م</p>
+      <p><b>ومصادرها كما ذكرتها:</b> شجرات النسب المحققة في ١/١/١٤٣١هـ و٢٨/٣/١٤٠٨هـ و١٣٩١هـ، وكبار السن من الأسرة</p>
+      <p>الحالات كما في اللوحة يوم حُرّرت، ومضى عليها أكثر من ثلاث سنوات
+      وأسماء البيوت المُعلَّمة <em style="font-style:normal;color:var(--gold)">مقترحة</em> تحتاج تأكيدكم</p>
     </div>
     <p class="dfoot">٤٥٨٨ فردًا في ١٨ جيلًا</p>
   </aside>
@@ -366,7 +368,7 @@ dialog.chat[open]{display:flex}
 <dialog class="fb" id="fbDlg">
   <h3>اقترح تصحيحًا</h3>
   <p id="fbRef"></p>
-  <p>ملاحظتك مجهولة تمامًا: لا يُحفظ اسمك ولا رقمك ولا أي معلومة عنك.</p>
+  <p>تُرسل الملاحظة بدون اسم أو رقم، ولا يطلب هذا النموذج بيانات تعريفية</p>
   <textarea id="fbText" maxlength="1000" placeholder="وش التصحيح أو الملاحظة؟"></textarea>
   <div id="fbCap" style="margin-top:10px"></div>
   <div class="msg" id="fbMsg" role="status"></div>
@@ -374,7 +376,7 @@ dialog.chat[open]{display:flex}
 </dialog>
 
 <dialog class="fb chat" id="chDlg">
-  <div class="chhead"><h3>اسأل عن شخص</h3><span>
+  <div class="chhead"><h3>اسأل المساعد</h3><span>
     <button type="button" id="chNew" title="محادثة جديدة">جديدة</button>
     <button type="button" id="chClose" aria-label="إغلاق">✕</button></span></div>
   <div class="chlog" id="chLog" aria-live="polite"></div>
@@ -390,15 +392,18 @@ dialog.chat[open]{display:flex}
 var WORLD={w:1690,h:2610};
 var IMGW=3287, IMGH=5075;
 var STCOL=["var(--s0)","var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)"];
-var STN=["أعزب حي","متزوج حي","متزوج متوفى له عقب ذكور وإناث","متزوج متوفى له عقب إناث فقط","متزوج متوفى ليس له عقب","أعزب متوفى"];
-var STS=["أعزب حي","متزوج حي","متوفى له عقب","متوفى له إناث","متوفى بلا عقب","أعزب متوفى"];
+var STKEY=["أعزب حي","متزوج حي","متزوج متوفى له عقب ذكور وإناث","متزوج متوفى له عقب إناث فقط","متزوج متوفى ليس له عقب","أعزب متوفى"];
+var STN=["حي، أعزب","حي، متزوج","متوفى، وله أبناء وبنات","متوفى، وله بنات فقط","متوفى، بلا ذرية","متوفى، أعزب"];
+var STS=["حي، أعزب","حي، متزوج","متوفى، وله أبناء وبنات","متوفى، وله بنات فقط","متوفى، بلا ذرية","متوفى، أعزب"];
+var STATUS_PROVENANCE="حسب لوحة ١٤٤٥هـ";
+var STATUS_UNKNOWN="الحالة غير مدوّنة في اللوحة";
 
 var P=[], byRow={}, kids={}, META=null, grid={}, CELL=60, totalNames=0;
 var nameCount={}, tripleCount={}, genStat={}, elders=[];
 var houses=[], houseSel=null, houseMembers=null;
 var tintImg={}, tintCache={}, poster=null;
 var mode=2, showLabels=true, drawerOpen=false, sel=null, results=[], resSet=null, panelMode="intro", rareList=null;
-var THEME_KEY="arifiTheme", THEMES=["light","dark","olive","clay","night"];
+var THEME_KEY="arifiTheme", THEMES=["light","dark"];
 var meet=[null,null], meetSlot=0;
 var view={s:0.25,x:0,y:0}, anim=null;
 var cv=document.getElementById("cv"), ctx=cv.getContext("2d"), DPR=1;
@@ -821,6 +826,17 @@ function select(p, fly){
 
 /* ---------- اللوحة ---------- */
 function esc(s){ return String(s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];}); }
+function hasStatus(p){ return p && Number.isInteger(p.st) && p.st>=0 && p.st<STN.length; }
+function statusText(p, short){ return hasStatus(p) ? (short?STS[p.st]:STN[p.st]) : STATUS_UNKNOWN; }
+function statusColor(p){ return hasStatus(p) ? STCOL[p.st] : "var(--line2)"; }
+function provenanceHTML(){ return '<span class="status-date">'+STATUS_PROVENANCE+'</span>'; }
+function statusHTML(p, short){ return '<span>'+esc(statusText(p,short))+' '+provenanceHTML()+'</span>'; }
+function sourceActionHTML(){ return '<button type="button" class="source-action" data-source-details>ⓘ تفاصيل المصدر</button>'; }
+function statusLegendHTML(){
+  return '<div class="legend"><p class="legend-context">ألوان الحالات '+provenanceHTML()+'</p>'+STN.map(function(n,i){
+    return '<span><i style="background:'+STCOL[i]+'"></i><span>'+esc(n)+'</span></span>';
+  }).join("")+'</div>';
+}
 function ancGen(i){ var a=META&&META.ancestors?META.ancestors[i]:null;
   return (a&&a.gen!=null) ? a.gen : (i<=6?i:7); }
 function fullChain(p){
@@ -871,7 +887,7 @@ function chainOf(p){
 }
 function meetHTML(){
   var h='<h3>وين نلتقي؟</h3>'+
-    '<p class="hint">اختر شخصين من الشجرة أو بالبحث لتعرف عند أي جدّ يلتقيان، وكم جيلًا بينهما وبينه.</p>'+
+    '<p class="hint">اختر شخصين من الشجرة أو بالبحث لتعرف عند أي جدّ يلتقيان، وكم جيلًا بينهما وبينه</p>'+
     '<div class="slots">';
   [0,1].forEach(function(i){
     var p=meet[i], col=i?"var(--pb)":"var(--pa)";
@@ -883,10 +899,10 @@ function meetHTML(){
   });
   h+='</div>';
   if(meet[0]&&meet[1]){
-    if(meet[0]===meet[1]) h+='<p class="blank">هذا نفس الشخص، اختر ثانيًا.</p>';
+    if(meet[0]===meet[1]) h+='<p class="blank">هذا نفس الشخص، اختر ثانيًا</p>';
     else{
       var m=meetPoint(meet[0],meet[1]);
-      if(!m) h+='<p class="blank">ما وصلنا لجدّ مشترك بينهما في اللوحة.</p>';
+      if(!m) h+='<p class="blank">ما وصلنا لجدّ مشترك بينهما في اللوحة</p>';
       else{
         var da=meet[0].gen-m.node.gen, db=meet[1].gen-m.node.gen;
         var nas=m.A.slice(m.ai+1).map(function(n){ return n.name; }).join(" بن ");
@@ -898,7 +914,7 @@ function meetHTML(){
              '<div style="border-color:var(--pa)"><b>'+ar(da)+'</b>'+genWord(da)+' من '+esc(meet[0].name)+'</div>'+
              '<div style="border-color:var(--pb)"><b>'+ar(db)+'</b>'+genWord(db)+' من '+esc(meet[1].name)+'</div>'+
            '</div></div>'+
-           '<p class="hint">المساران مرسومان على الشجرة باللونين.</p>';
+           '<p class="hint">المساران مرسومان على الشجرة باللونين</p>';
       }
     }
   }
@@ -906,10 +922,10 @@ function meetHTML(){
   return h;
 }
 function housesHTML(){
-  if(!houses.length) return '<p class="blank">ما قدرنا نحمّل قائمة البيوت، حدّث الصفحة.</p>';
+  if(!houses.length) return '<p class="blank">ما قدرنا نحمّل قائمة البيوت، حدّث الصفحة</p>';
   var h='<h3>'+plural(houses.length,'بيت واحد','بيتان','بيوت','بيتًا')+'</h3>'+
-    '<div class="note">ما عليه لقب أحمر في اللوحة مؤكّد، وما هو <em style="font-style:normal;color:var(--gold)">مقترح</em> استُنتج آليًا ويحتاج تأكيدكم. '+
-    'ومن ذريته أربعة فأقل مستبعد.</div>';
+    '<div class="note">ما عليه لقب أحمر في اللوحة مؤكّد، وما هو <em style="font-style:normal;color:var(--gold)">مقترح</em> استُنتج آليًا ويحتاج تأكيدكم، '+
+    'ومن ذريته أربعة فأقل مستبعد</div>';
   if(houseSel){
     var m=houseSel;
     h+='<div class="meetres"><span style="font-size:11.5px;color:var(--gold);font-weight:600">البيت المختار</span>'+
@@ -920,7 +936,7 @@ function housesHTML(){
          '<div><b>'+ar(m.gen)+'</b>جيل جدّه</div>'+
          '<div><b>'+esc(m.branch)+'</b>الفرع</div>'+
        '</div>'+
-       '<p class="hint">أفراده مُعلَّمون على الشجرة. <button type="button" data-hclear="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">إلغاء التحديد</button></p></div>';
+       '<p class="hint">أفراده مُعلَّمون على الشجرة <button type="button" data-hclear="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">إلغاء التحديد</button></p></div>';
   }
   houses.forEach(function(x){
     h+='<button class="hrow" type="button" data-house="'+x.i+'" aria-pressed="'+(houseSel===x?"true":"false")+'">'+
@@ -932,46 +948,53 @@ function housesHTML(){
   return h;
 }
 function eldersHTML(){
-  var g12=genStat[12]||{n:0,a:0};
+  var g12=genStat[12]||{n:0,a:0,k:0};
   var h='<h3>'+ar(elders.length)+' من كبار الأسرة الأحياء</h3>'+
-    '<div class="note">الحالة من ألوان لوحة <b>١٤٤٥هـ</b>، ومضى عليها أكثر من ثلاث سنوات، فقد يكون بعضهم تُوفّي بعدها. '+
-    'راجعوا أهل الفرع قبل الاعتماد عليها.</div>';
+    '<p class="hint">'+STATUS_PROVENANCE+'</p>';
   var cur=null;
   elders.forEach(function(p){
     if(p.gen!==cur){ cur=p.gen;
-      var st=genStat[cur]||{n:0,a:0};
-      h+='<h3 style="color:var(--gold)">الجيل '+ar(cur)+'، '+ar(st.a)+' '+(st.a===1?'حيّ':'أحياء')+' من '+ar(st.n)+'</h3>';
-      if(st.a===1) h+='<p class="hint" style="margin:0 0 4px">الوحيد الحي في جيله، يستحق التأكد من أهل الفرع.</p>'; }
+      var st=genStat[cur]||{n:0,a:0,k:0};
+      h+='<h3 style="color:var(--gold)">الجيل '+ar(cur)+'، '+ar(st.a)+' '+(st.a===1?'حيّ':'أحياء')+' من '+ar(st.k)+'</h3>';
+      if(st.a===1) h+='<p class="hint" style="margin:0 0 4px">الوحيد الحي في جيله، يستحق التأكد من أهل الفرع</p>'; }
     h+='<button class="elder" type="button" data-row="'+p.row+'">'+
        '<b>'+esc(p.name)+'</b>'+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span>':'')+
        '<span>'+esc(p.short.replace(p.name+" بن ",""))+'</span>'+
        '<span style="margin-inline-start:auto">فرع '+esc(META.l1[p.b1])+'</span></button>';
   });
-  h+='<p class="hint">الجيل ١٢ فيه <b>'+ar(g12.a)+'</b> حيًا من '+ar(g12.n)+'، أكثر من أن يُسرد هنا. '+
-     'والأجيال ٨ و٩ لم يبقَ منها أحد.</p>';
+  h+='<p class="hint">الجيل ١٢ فيه <b>'+ar(g12.a)+'</b> حيًا من '+ar(g12.k)+'، أكثر من أن يُسرد هنا، '+
+     'والأجيال ٨ و٩ لم يبقَ منها أحد</p>';
   return h;
 }
 function factsHTML(p){
   var n=nameCount[p.name]||1, tot=P.length;
-  var one = n===1 ? "لا يحمله أحد غيره في الشجرة" : "واحد من كل "+ar(Math.round(tot/n))+" في الأسرة";
+  var share=n/tot*100;
+  var roundedShare=share<1 ? Math.round(share*100)/100 : Math.round(share);
+  var shareText=ar(String(roundedShare)).replace(".","٫")+"٪";
   var t=(tripleCount[p.tkey]||1)-1;
-  var tline = t===0 ? "متفرّد باسمه الثلاثي" :
-    (t===1 ? "معه شخص واحد بنفس الاسم الثلاثي"
-           : t===2 ? "معه شخصان بنفس الاسم الثلاثي"
-           : "معه "+ar(t)+(t<11?" أشخاص":" شخصًا")+" بنفس الاسم الثلاثي");
-  var st=genStat[p.gen]||{n:1,a:0};
-  return '<div class="facts">'+
-    '<div>اسم <b>'+esc(p.name)+'</b>، '+one+'، '+ar(n)+' من '+ar(tot)+'.</div>'+
-    '<div>'+tline+'.</div>'+
-    '<div>الجيل <b>'+ar(p.gen)+'</b>: '+ar(Math.round(st.a/st.n*100))+'٪ من جيله أحياء ('+ar(st.a)+' من '+ar(st.n)+').</div>'+
-  '</div>';
+  var tline = t===0 ? "ينفرد باسمه الثلاثي" :
+    (t===1 ? "يتكرر اسمه الثلاثي مع شخص واحد"
+           : "يتكرر اسمه الثلاثي مع "+ar(t)+" أشخاص");
+  var st=genStat[p.gen]||{n:1,a:0,k:0};
+  var ordinalGenerations=["الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر","الحادي عشر","الثاني عشر","الثالث عشر","الرابع عشر","الخامس عشر","السادس عشر","السابع عشر","الثامن عشر"];
+  var groupedGenerations=Array.isArray(st.gens)&&st.gens.length>1;
+  var generationScope=groupedGenerations ? "هذه الأجيال" :
+    (Number.isInteger(p.gen) ? "الجيل "+(ordinalGenerations[p.gen-1]||ar(p.gen)) : "هذا الجيل");
+  var statusFact=st.k
+    ? 'سُجّل '+ar(Math.round(st.a/st.k*100))+'٪ من أفراد '+generationScope+' أحياء'
+    : 'حالات '+generationScope+' غير مدوّنة في اللوحة';
+  return '<details class="facts"><summary>إحصاءات الاسم والجيل</summary>'+
+    '<div>يحمل اسم <b>'+esc(p.name)+'</b> '+ar(n)+' من المسجلين في اللوحة ('+shareText+')</div>'+
+    '<div>'+tline+'</div>'+
+    '<div>'+esc(statusFact)+'</div>'+
+  '</details>';
 }
 function rareHTML(){
   var groups=[[1,"يتكرر مرة واحدة"],[2,"يتكرر مرتين"],[3,"يتكرر ثلاث مرات"]];
   var covered=rareList.reduce(function(a,r){ return a+r.n; },0);
   var h='<h3>'+ar(rareList.length)+' اسمًا نادرًا من '+ar(totalNames)+'</h3>'+
     '<p class="hint">أسماء يحملها ثلاثة أفراد أو أقل، مجموعهم <b>'+ar(covered)+'</b> فردًا، '+
-    ar(Math.round(covered/P.length*100))+'٪ من الشجرة. اضغط أي اسم لتحديد حامليه على الرسم.</p>';
+    ar(Math.round(covered/P.length*100))+'٪ من الشجرة، اضغط أي اسم لتحديد حامليه على الرسم</p>';
   groups.forEach(function(g){
     var list=rareList.filter(function(r){ return r.n===g[0]; });
     if(!list.length) return;
@@ -993,11 +1016,13 @@ function fbOpen(p){
   document.getElementById("fbDlg").showModal();
   fbCaptcha();
 }
-function tsLoad(fn){
+function tsLoad(fn, fail){
   if(window.turnstile){ fn(); return; }
   var sc=document.createElement("script");
   sc.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-  sc.onload=fn; document.head.appendChild(sc);
+  sc.onload=fn;
+  sc.onerror=function(){ if(fail) fail(); };
+  document.head.appendChild(sc);
 }
 function fbCaptcha(){
   tsLoad(function(){
@@ -1008,16 +1033,16 @@ function fbCaptcha(){
 document.getElementById("fbCancel").addEventListener("click",function(){ document.getElementById("fbDlg").close(); });
 document.getElementById("fbSend").addEventListener("click",function(){
   var btn=this, msg=document.getElementById("fbMsg"), text=document.getElementById("fbText").value.trim();
-  if(text.length<3){ msg.textContent="اكتب الملاحظة أول."; return; }
-  if(!fbTok){ msg.textContent="انتظر التحقق ثواني."; return; }
+  if(text.length<3){ msg.textContent="اكتب الملاحظة أول"; return; }
+  if(!fbTok){ msg.textContent="انتظر التحقق ثواني"; return; }
   btn.disabled=true; msg.textContent="…جاري الإرسال";
   fetch(FB_URL,{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({text:text,ref:fbRef,token:fbTok}),credentials:"omit",referrerPolicy:"no-referrer"})
     .then(function(r){ return r.json(); })
     .then(function(j){
-      if(j.ok){ msg.textContent="وصلت، يعطيك العافية."; setTimeout(function(){ document.getElementById("fbDlg").close(); },1200); }
-      else{ msg.textContent="ما انرسلت، جرّب مرة ثانية."; btn.disabled=false; window.turnstile.reset(fbWidget); fbTok=""; }
-    }).catch(function(){ msg.textContent="تعذّر الاتصال."; btn.disabled=false; });
+      if(j.ok){ msg.textContent="وصلت، يعطيك العافية"; setTimeout(function(){ document.getElementById("fbDlg").close(); },1200); }
+      else{ msg.textContent="ما انرسلت، جرّب مرة ثانية"; btn.disabled=false; window.turnstile.reset(fbWidget); fbTok=""; }
+    }).catch(function(){ msg.textContent="تعذّر الاتصال"; btn.disabled=false; });
 });
 
 /* مساعد المحادثة: الـ LLM يستخرج فلاتر فقط، والمطابقة تتم هنا على بيانات الشجرة. */
@@ -1031,8 +1056,8 @@ function chMatch(f, drop){
     if(fa && !(pa && norm(pa.name)===fa)) return false;
     if(gf && !drop.gf && !(ga && norm(ga.name)===gf)) return false;
     if(f.main_branch && !drop.br && META.l1[p.b1]!==f.main_branch) return false;
-    if(typeof f.alive==="boolean" && !drop.al && (p.st===0||p.st===1)!==f.alive) return false;
-    if(typeof f.married==="boolean" && !drop.ma && (p.st>=1&&p.st<=4)!==f.married) return false;
+    if(typeof f.alive==="boolean" && !drop.al && (!hasStatus(p) || (p.st===0||p.st===1)!==f.alive)) return false;
+    if(typeof f.married==="boolean" && !drop.ma && (!hasStatus(p) || (p.st>=1&&p.st<=4)!==f.married)) return false;
     if(typeof f.children_count==="number" && !drop.ch && (kids[p.row]||[]).length!==f.children_count) return false;
     if(typeof f.children_count!=="number" && typeof f.has_children==="boolean" && !drop.ch && chHasKids(p)!==f.has_children) return false;
     return true;
@@ -1058,7 +1083,7 @@ function chCards(bub, list){
   list.forEach(function(p){
     var b=document.createElement("button"); b.type="button"; b.className="resrow";
     b.innerHTML='<b>'+esc(p.name)+'</b> '+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
-      '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، '+STS[p.st]+'</span>';
+      '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، '+statusHTML(p,true)+'</span>';
     b.addEventListener("click",function(){ document.getElementById("chDlg").close(); select(p,true); revealPanel(); });
     bub.appendChild(b);
   });
@@ -1066,19 +1091,19 @@ function chCards(bub, list){
 }
 function chReply(f){
   var u=chUnderstood(f);
-  if(!u){ chBub("a","ما فهمت وصف يفيد. اذكر الاسم، أو اسم أبيه، أو فرعه."); return; }
+  if(!u){ chBub("a","ما فهمت وصف يفيد، اذكر الاسم، أو اسم أبيه، أو فرعه"); return; }
   var steps=[{},{ch:1},{ch:1,ma:1},{ch:1,ma:1,al:1},{ch:1,ma:1,al:1,gf:1},{ch:1,ma:1,al:1,gf:1,br:1}], out=[], k=0;
   for(;k<steps.length;k++){ out=chMatch(f,steps[k]); if(out.length) break; }
-  if(!out.length){ chBub("a","فهمت: "+u+".\nما لقيت أحد بهذي المواصفات. جرّب تغيّر أو تحذف شرط."); return; }
+  if(!out.length){ chBub("a","فهمت: "+u+"\nما لقيت أحد بهذي المواصفات، جرّب تغيّر أو تحذف شرط"); return; }
   out.sort(function(a,b){ return a.gen-b.gen; });
   var t="فهمت: "+u+".\n";
-  if(k) t+="ما فيه تطابق كامل، هذي أقرب النتائج.";
+  if(k) t+="ما فيه تطابق كامل، هذي أقرب النتائج";
   else if(out.length===1) t+="هذا هو؟";
   else if(out.length<=5) t+=ar(out.length)+" مرشحين، أيهم تقصد؟";
   else{
     var ask=[]; if(!f.father_name) ask.push("اسم أبيه"); if(!f.main_branch) ask.push("فرعه (محمد/خلف/سعد/ناصر)");
     if(typeof f.alive!=="boolean") ask.push("هل هو حي أو متوفى");
-    t+=ar(out.length)+" نتيجة، كثير. ضيّق عليّ"+(ask.length?": قل لي "+ask.join(" أو "):"")+".\nهذي أقدم ٥:";
+    t+=ar(out.length)+" نتيجة، كثير، ضيّق عليّ"+(ask.length?": قل لي "+ask.join(" أو "):"")+"\nهذي أقدم ٥:";
   }
   chCards(chBub("a",t), out.slice(0,5));
 }
@@ -1087,17 +1112,23 @@ function chWidgetMount(){
   tsLoad(function(){
     if(chSess || chWidget!==null) return;
     chWidget=window.turnstile.render("#chCap",{sitekey:TS_KEY,appearance:"interaction-only",callback:function(t){ chTok=t; }});
-  });
+  },function(){ chBub("a","تعذّر تحميل التحقق. افتح الموقع المنشور مباشرة، ثم جرّب مرة ثانية"); });
 }
 function chOpen(){
   document.getElementById("chDlg").showModal();
-  if(!document.getElementById("chLog").children.length) chBub("a","هلا! صف لي الشخص اللي تدور عليه، مثل:\n«اسمه أحمد بن محمد وله عيال ومن آل محمد».\nوتقدر تكمّل وتضيّق: «لا، هو متوفى».");
+  if(!document.getElementById("chLog").children.length) chBub("a","صف الشخص بما تعرفه عنه، وسيساعدك المساعد في العثور عليه داخل الشجرة، مثل:\n«اسمه أحمد بن محمد وله عيال ومن آل محمد»\nوتقدر تكمّل وتضيّق: «لا، هو متوفى»");
   chWidgetMount();
   document.getElementById("chText").focus();
 }
+document.getElementById("assistantTrigger").addEventListener("click",chOpen);
 function chSend(){
   var ta=document.getElementById("chText"), text=ta.value.trim();
   if(chBusy || text.length<2) return;
+  if(!chSess && !chTok){
+    chWidgetMount();
+    chBub("a","أكمل التحقق أولًا، ثم أرسل رسالتك");
+    return;
+  }
   chBusy=true; document.getElementById("chSend").disabled=true;
   ta.value=""; chBub("u",text);
   var typing=chBub("a typing","…"), gen=chGen, tries=0;
@@ -1116,10 +1147,10 @@ function chSend(){
           chF=j.filters||{}; chReply(chF);
         }else{
           if(j.err==="captcha"){ chSess=""; chTok=""; if(chWidget!==null){ window.turnstile.reset(chWidget); } else chWidgetMount(); }
-          chBub("a",j.err==="captcha"?"انتهى التحقق، أكمله ثم أعد رسالتك.":"ما اشتغل، جرّب مرة ثانية.");
+          chBub("a",j.err==="captcha"?"انتهى التحقق، أكمله ثم أعد رسالتك":"ما اشتغل، جرّب مرة ثانية");
         }
       })
-      .catch(function(){ if(gen===chGen){ typing.remove(); chBub("a","تعذّر الاتصال."); } })
+      .catch(function(){ if(gen===chGen){ typing.remove(); chBub("a","تعذّر الاتصال"); } })
       .then(function(){ chTok=""; done(); });
   })();
 }
@@ -1129,7 +1160,39 @@ document.getElementById("chText").addEventListener("keydown",function(e){
 document.getElementById("chClose").addEventListener("click",function(){ document.getElementById("chDlg").close(); });
 document.getElementById("chNew").addEventListener("click",function(){
   chGen++; chF=null; chBusy=false; document.getElementById("chSend").disabled=false;
-  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة. صف لي الشخص."); });
+  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة، صف لي الشخص"); });
+function sectionTitle(label, count){
+  return '<div class="sectionhead"><h3>'+label+'</h3><span class="sectioncount">'+ar(count)+'</span></div>';
+}
+function relationState(p, children){
+  var daughtersOnly=p.st===3, noDescendants=p.st===4||p.st===5;
+  var incomplete=!!p.rev || ((daughtersOnly||noDescendants)&&children.length>0);
+  return {
+    state:incomplete ? "incomplete" : (children.length ? "exists" : (daughtersOnly ? "daughters" : (noDescendants ? "none" : "unknown"))),
+    documentedChildren:children
+  };
+}
+function peopleList(people, withDescendantHint){
+  return '<div class="kids">'+people.map(function(k){
+    var n=(kids[k.row]||[]).length;
+    return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+statusColor(k)+'"></i>'+
+      '<b>'+esc(k.name)+'</b>'+(k.laqab?'<span class="plq">'+esc(k.laqab)+'</span>':'')+
+      '<u>'+esc(statusText(k,true))+'</u>'+
+      (withDescendantHint&&n?'<small>'+ar(n)+' أبناء</small>':'')+'</button>';
+  }).join('')+'</div>';
+}
+function relationshipsHTML(p){
+  var ch=kids[p.row]||[];
+  var sib=p.fa&&byRow[p.fa] ? (kids[p.fa]||[]).filter(function(x){ return x!==p; }) : [];
+  var relation=relationState(p,ch), html='';
+  if(relation.documentedChildren.length) html+=sectionTitle("الأبناء",ch.length)+peopleList(ch,true);
+  if(relation.state==="incomplete") html+='<p class="relation-note">بيانات الأبناء غير مكتملة في اللوحة</p>';
+  if(sib.length) html+=sectionTitle("الإخوة",sib.length)+peopleList(sib,false);
+  if(relation.state==="none"&&!sib.length) html+='<p class="blank">لا أبناء أو إخوة موثقون في اللوحة</p>';
+  var descendants=ch.length ? descCount(p) : null;
+  if(descendants!==null&&descendants>ch.length) html+=sectionTitle("الذرية",descendants);
+  return html;
+}
 function panel(){
   var el=document.getElementById("side");
   if(panelMode==="meet" && results.length){ renderResults(el); return; }
@@ -1172,8 +1235,7 @@ function panel(){
   }
   if(results.length && !sel){ renderResults(el); return; }
   if(!sel){ el.innerHTML = introHTML(); var cb=el.querySelector("[data-chat]"); if(cb) cb.addEventListener("click",chOpen); return; }
-  var p=sel, ch=kids[p.row]||[];
-  var sib = p.fa ? (kids[p.fa]||[]).filter(function(x){return x!==p;}) : [];
+  var p=sel;
   var ch2=chainOf(p);
   var nas = ch2.slice(1).map(function(n,i){
     return '<span class="sep"> بن </span><button type="button" data-row="'+(n.node?n.node.row:"")+'">'+esc(n.name)+'</button>';
@@ -1182,7 +1244,7 @@ function panel(){
     '<div class="panelhead"><span class="pname">'+esc(p.name)+'</span>'+
       (p.laqab?'<span class="plq">'+esc(p.laqab)+'</span>':'')+'</div>'+
     '<div class="meta">'+
-      '<span class="badge"><i style="background:'+STCOL[p.st]+'"></i>'+STN[p.st]+'</span>'+
+      '<span class="badge"><i style="background:'+statusColor(p)+'"></i>'+esc(statusText(p,false))+'</span>'+
       '<span class="badge">الجيل '+ar(p.gen)+'</span>'+
       '<span class="badge">فرع '+esc(META.l1[p.b1])+'</span>'+
       '<span class="badge">'+esc(META.l2[p.b2])+' بن '+esc(META.l1[META.l2parent[p.b2]])+'</span>'+
@@ -1192,19 +1254,9 @@ function panel(){
     (p.house ? '<div style="margin-top:9px">'+
         p.houses.map(function(h,i){ return '<button class="hbadge" type="button" data-gohouse="'+h.i+'">'+
           (i?'':'من ')+esc(h.name)+'</button>'; }).join(" ")+'</div>' : '')+
+    '<div class="status-provenance"><span>'+STATUS_PROVENANCE+'</span></div>'+
     '<div class="nasab"><b>'+esc(p.name)+'</b>'+nas+'</div>'+
-    '<h3>'+plural(ch.length,'ابن واحد','ابنان','أبناء','ابنًا')+' في اللوحة</h3>'+
-    (ch.length? '<div class="kids">'+ch.map(function(k){
-        var n=(kids[k.row]||[]).length;
-        return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+STCOL[k.st]+'"></i>'+
-               '<b>'+esc(k.name)+'</b>'+(k.laqab?'<span class="plq">'+esc(k.laqab)+'</span>':'')+
-               '<u>'+STS[k.st]+'</u>'+
-               '<small>'+(n?ar(n)+" أبناء":"")+'</small></button>'; }).join("")+'</div>'
-      : '<p class="blank">ما رُسم له أبناء في اللوحة.</p>')+
-    (sib.length? '<h3>'+plural(sib.length,'أخ واحد','أخوان','إخوة','أخًا')+'</h3><div class="kids">'+sib.slice(0,40).map(function(k){
-        return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+STCOL[k.st]+'"></i>'+
-               '<b>'+esc(k.name)+'</b><u>'+STS[k.st]+'</u></button>'; }).join("")+'</div>' : '')+
-    '<p class="hint">ذريته في اللوحة <b>'+ar(descCount(p))+'</b> فردًا.</p>'+ factsHTML(p)+
+    relationshipsHTML(p)+factsHTML(p)+
     '<button type="button" class="fbbtn" data-fb>اقترح تصحيحًا على هذا الشخص</button>';
   el.querySelector("[data-fb]").addEventListener("click",function(){ fbOpen(p); });
   el.querySelectorAll("[data-row]").forEach(function(b){
@@ -1241,32 +1293,30 @@ function descCount(p){
   return n;
 }
 function introHTML(){
-  return '<button type="button" class="chatbtn" data-chat>اسأل عن شخص: صفه بكلامك وأطلعه لك</button>'+
-    '<h3>دوّر على اسمك</h3>'+
-    '<p class="hint">اكتب الاسم مع أبيه وجدّه، مثل: <b>خالد بن محمد بن سعد</b>. '+
-    'الاسم وحده ما يكفي، ففي الشجرة ١٨٣ «خالد».</p>'+
-    '<p class="hint">أو اضغط أي اسم في الرسم فتطلع بطاقته. '+
-    'كبّر بالإصبعين أو بعجلة الفأرة لتبين الأسماء الأصغر.</p>'+
+  return '<h3>دوّر على اسمك</h3>'+
+    '<p class="hint">اكتب الاسم مع اسم الأب والجد، مثل: <b>خالد بن محمد بن سعد</b>، فالاسم الأول وحده لا يكفي، وفي الشجرة ١٨٣ شخصًا باسم خالد</p>'+
+    '<p class="hint">اضغط على أي اسم في الشجرة لعرض بطاقته</p>'+
+    '<p class="hint">قرّب بإصبعين على الجوال، أو استخدم عجلة الفأرة على الكمبيوتر، لرؤية الأسماء الصغيرة</p>'+
     '<h3>الفروع الرئيسية</h3>'+
-    '<p class="hint">اضغط الفرع ليتلوّن في الرسم. '+
-    '<b>محمد</b> ابن سالم، و<b>خلف</b> و<b>سعد</b> و<b>ناصر</b> أبناء <b>جماز</b> أخيه، فهو عمّهم.</p><div class="kids">'+
+    '<p class="hint">اضغط الفرع ليتلوّن في الرسم، '+
+    '<b>محمد</b> ابن سالم، و<b>خلف</b> و<b>سعد</b> و<b>ناصر</b> أبناء <b>جماز</b> أخيه، فهو عمّهم</p><div class="kids">'+
     META.l1.map(function(n,i){
       var head=P.filter(function(p){return p.b1===i;});
       return '<button class="kid" type="button" data-b1="'+i+'"><i style="background:'+
         ["var(--b0)","var(--b1)","var(--b2)","var(--b3)"][i]+'"></i><b>'+esc(n)+'</b>'+
         '<small>'+ar(head.length)+' فردًا</small></button>'; }).join("")+'</div>'+
     '<h3>البيوت</h3>'+
-    '<p class="hint"><b>'+ar(houses.length)+'</b> بيتًا يُعرف كل واحد بجدّه. '+
+    '<p class="hint"><b>'+ar(houses.length)+'</b> بيتًا، يُعرف كل بيت باسم الجد الذي ينتسب إليه '+
     '<button type="button" data-houses-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح قائمة البيوت</button></p>'+
     '<h3>كبار الأسرة</h3>'+
-    '<p class="hint"><b>'+ar(elders.length)+'</b> رجلًا من الجيلين العاشر والحادي عشر كانوا أحياء يوم حُرّرت اللوحة. '+
+    '<p class="hint"><b>'+ar(elders.length)+'</b> رجلًا من الجيلين العاشر والحادي عشر كانوا أحياء عند توثيق اللوحة '+
     '<button type="button" data-elders-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح كبار الأسرة</button></p>'+
     '<h3>الأسماء النادرة</h3>'+
-    '<p class="hint"><b>'+ar(rareList?rareList.length:0)+'</b> اسمًا ما يحمله إلا ثلاثة أفراد أو أقل. '+
+    '<p class="hint"><b>'+ar(rareList?rareList.length:0)+'</b> أسماء، يحمل كل اسم منها ثلاثة أشخاص أو أقل '+
     '<button type="button" data-rare-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح الأسماء النادرة</button></p>'+
-    '<div class="legend">'+STN.map(function(n,i){ return '<span><i style="background:'+STCOL[i]+'"></i>'+n+'</span>'; }).join("")+'</div>'+
-    '<p class="hint" style="margin-top:14px">المصدر لوحة <b>شجرة العريفي ١٤٤٥هـ</b> بتنفيذ صندوق أسرة العريفي. '+
-    '<button type="button" data-open-menu="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">تفاصيل المصادر</button></p>';
+    statusLegendHTML()+
+    '<p class="hint" style="margin-top:14px">المصدر: لوحة <b>«شجرة العريفي»</b> لعام ١٤٤٥هـ، من تنفيذ صندوق أسرة العريفي '+
+    sourceActionHTML()+'</p>';
 }
 function renderResults(el){
   el.innerHTML='<h3>نتائج البحث ('+ar(results.length)+')</h3><div class="res">'+
@@ -1275,7 +1325,7 @@ function renderResults(el){
         '<b>'+esc(p.name)+'</b> '+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
         '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، فرع '+esc(META.l1[p.b1])+'</span></button>';
     }).join("")+'</div>'+
-    (results.length>300?'<p class="hint">عُرضت أول ٣٠٠، أضف اسم الأب لتضييق البحث.</p>':'');
+    (results.length>300?'<p class="hint">عُرضت أول ٣٠٠، أضف اسم الأب لتضييق البحث</p>':'');
   el.querySelectorAll("[data-row]").forEach(function(b){
     b.addEventListener("click",function(){
       var r=+b.dataset.row, pp=byRow[r]; if(!pp) return;
@@ -1329,11 +1379,11 @@ function boot(rows, meta, hrows){
   var h=rows[0], col={}; h.forEach(function(x,i){ col[x.trim()]=i; });
   for(var i=1;i<rows.length;i++){
     var r=rows[i]; if(r.length<6) continue;
-    var st=STN.indexOf(r[col["الحالة"]]);
+    var st=STKEY.indexOf(r[col["الحالة"]]);
     var p={ row:+r[col["#"]], name:r[col["الاسم"]], laqab:r[col["اللقب"]],
             nasab:r[col["النسب_الكامل"]], gen:+r[col["الجيل"]], fa:+r[col["رقم_صف_الأب"]],
             b1:+r[col["رقم_الفرع_الرئيسي"]], b2:+r[col["رقم_الفرع_الفرعي"]],
-            st:st<0?0:st, rev:r[col["يحتاج_مراجعة"]]==="1",
+            st:st<0?null:st, rev:r[col["يحتاج_مراجعة"]]==="1",
             x:+r[col["إحداثي_س"]], y:+r[col["إحداثي_ص"]], r:+r[col["نصف_القطر"]] };
     p.nk=norm(p.nasab); p.lqn=p.laqab?norm(p.laqab):"";
     p.short=p.nasab.split(" بن ").slice(0,4).join(" بن ");
@@ -1371,8 +1421,8 @@ function boot(rows, meta, hrows){
     var f=p.fa?byRow[p.fa]:null, g=(f&&f.fa)?byRow[f.fa]:null;
     p.tkey=p.name+"|"+(f?f.name:"")+"|"+(g?g.name:"");
     tripleCount[p.tkey]=(tripleCount[p.tkey]||0)+1;
-    var st=genStat[p.gen]=genStat[p.gen]||{n:0,a:0};
-    st.n++; if(p.st===0||p.st===1) st.a++;
+    var st=genStat[p.gen]=genStat[p.gen]||{n:0,a:0,k:0};
+    st.n++; if(hasStatus(p)){ st.k++; if(p.st===0||p.st===1) st.a++; }
   });
   elders=P.filter(function(p){ return (p.st===0||p.st===1) && p.gen<=11; })
           .sort(function(a,b){ return a.gen-b.gen || a.name.localeCompare(b.name,"ar"); });
@@ -1403,7 +1453,7 @@ function placeSearch(){         /* الجوال: البحث بين الخريط�
 }
 
 function wire(){
-  var pointers=new Map(), lastDist=0, lastMid=null, moved=0, single=null;
+  var pointers=new Map(), lastDist=0, lastMid=null, moved=0, single=null, drawerReturnFocus=null;
   function arr(){ var a=[]; pointers.forEach(function(v){ a.push(v); }); return a; }
   function midOf(){ var a=arr(); return [(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2]; }
   function distOf(){ var a=arr(); return Math.hypot(a[0][0]-a[1][0], a[0][1]-a[1][1]); }
@@ -1471,12 +1521,19 @@ function wire(){
   document.getElementById("credit").onclick=goOwner;
   document.getElementById("zin").onclick=function(){ goTo(zoomAt(vw()/2,vh()/2,view.s*1.6),true); };
   document.getElementById("zout").onclick=function(){ goTo(zoomAt(vw()/2,vh()/2,view.s/1.6),true); };
-  function setDrawer(on){
+  function setDrawer(on, showSource){
+    if(on && !drawerOpen) drawerReturnFocus=document.activeElement;
     drawerOpen=on;
     document.getElementById("drawer").hidden=!on;
     document.getElementById("scrim").hidden=!on;
     document.getElementById("menu").setAttribute("aria-expanded",on?"true":"false");
-    if(on) document.getElementById("dclose").focus();
+    if(on){
+      var target=showSource?document.getElementById("sourceDetails"):document.getElementById("dclose");
+      target.focus();
+      if(showSource) target.scrollIntoView({block:"start"});
+    }else if(drawerReturnFocus && document.contains(drawerReturnFocus)){
+      drawerReturnFocus.focus(); drawerReturnFocus=null;
+    }
   }
   document.getElementById("back").onclick=goBack;
   document.getElementById("menu").onclick=function(){ setDrawer(!drawerOpen); };
@@ -1549,7 +1606,7 @@ function wire(){
     else document.documentElement.removeAttribute("data-theme");
   }
   function markThemeBtns(t){
-    ["System","Light","Dark","Olive","Clay","Night"].forEach(function(n){
+    ["System","Light","Dark"].forEach(function(n){
       document.getElementById("t"+n).setAttribute("aria-pressed", t===n.toLowerCase()?"true":"false"); });
   }
   function setTheme(t){
@@ -1559,13 +1616,12 @@ function wire(){
   document.getElementById("tSystem").onclick=function(){ setTheme("system"); };
   document.getElementById("tLight").onclick=function(){ setTheme("light"); };
   document.getElementById("tDark").onclick=function(){ setTheme("dark"); };
-  ["Olive","Clay","Night"].forEach(function(n){
-    document.getElementById("t"+n).onclick=function(){ setTheme(n.toLowerCase()); }; });
   markThemeBtns(themeVal());
   var q=document.getElementById("q"), tm=null;
   q.addEventListener("input",function(){ clearTimeout(tm); tm=setTimeout(function(){ search(q.value); },140); });
   document.addEventListener("keydown",function(e){
-    if(e.target.tagName==="INPUT") { if(e.key==="Escape"){ q.value=""; search(""); } return; }
+    var editable=e.target.matches("input, textarea, select, [contenteditable='true']");
+    if(editable) { if(e.target===q && e.key==="Escape"){ q.value=""; search(""); } return; }
     if(e.key==="m"||e.key==="M"){ setDrawer(!drawerOpen); return; }
     if(e.key==="Escape"){ if(drawerOpen){ setDrawer(false); return; } goBack(); }
     if(e.key==="Backspace"){ e.preventDefault(); goBack(); }
@@ -1574,7 +1630,8 @@ function wire(){
     if(e.key==="0") home(true);
   });
   document.getElementById("side").addEventListener("click",function(e){
-    if(e.target.closest("[data-open-menu]")){ document.getElementById("menu").click(); return; }
+    if(e.target.closest("[data-source-details]")){ setDrawer(true,true); return; }
+    if(e.target.closest("[data-open-menu]")){ setDrawer(true,false); return; }
     if(e.target.closest("[data-rare-open]")){ document.getElementById("rare").click(); return; }
     if(e.target.closest("[data-elders-open]")){ document.getElementById("elders").click(); return; }
     if(e.target.closest("[data-houses-open]")){ document.getElementById("houses").click(); return; }
@@ -1599,7 +1656,7 @@ Promise.all([
   fetch("alarifi_houses.csv").then(function(r){return r.text();}).catch(function(){return "";}),
   loadImg("tree.jpg"), loadImg("tint_main.png"), loadImg("tint_sub.png")
 ]).then(function(v){
-  if(!v[0]||!v[1]){ document.getElementById("load").textContent="تعذّر تحميل البيانات."; return; }
+  if(!v[0]||!v[1]){ document.getElementById("load").textContent="تعذّر تحميل البيانات"; return; }
   poster=v[3]; tintImg[1]=v[4]; tintImg[2]=v[5]; tintCache={};
   wire();
   resize();
