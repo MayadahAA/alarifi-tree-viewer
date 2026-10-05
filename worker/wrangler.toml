@@ -4,7 +4,7 @@ compatibility_date = "2025-01-01"
 
 [vars]
 # عدّل الرابط/الموديل حسب منصتك (z.ai الدولية أو bigmodel.cn)
-GLM_URL = "https://api.z.ai/api/paas/v4/chat/completions"
+GLM_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions"
 GLM_MODEL = "glm-4.5-flash"
 
 # الأسرار (ما تنكتب هنا):

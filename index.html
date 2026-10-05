@@ -270,6 +270,23 @@ dialog.fb .msg{min-height:1.2em; font-size:13px; margin-top:8px}
 
 dialog.fb .cres{display:flex; flex-direction:column; gap:6px; margin-top:12px}
 .chatbtn{display:block; width:100%; margin:0 0 14px; padding:10px 12px; background:var(--gold-soft); color:var(--ink); border:1px solid var(--gold); border-radius:9px; font-size:14px; text-align:start}
+
+dialog.chat{padding:0; display:none; flex-direction:column; height:min(600px,86vh)}
+dialog.chat[open]{display:flex}
+.chhead{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line)}
+.chhead h3{margin:0}
+.chhead button{background:none; border:1px solid var(--line2); border-radius:8px; padding:4px 10px; font-size:13px; margin-inline-start:6px}
+.chlog{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px}
+.bub{max-width:88%; padding:9px 12px; border-radius:14px; font-size:14px; line-height:1.7; white-space:pre-wrap}
+.bub.u{align-self:flex-start; background:var(--gold); color:var(--surface); border-end-start-radius:4px}
+.bub.a{align-self:flex-end; background:var(--sunk); border:1px solid var(--line); border-end-end-radius:4px}
+.bub.a .resrow{display:block; width:100%; margin-top:6px; text-align:start}
+.bub.typing{color:var(--muted)}
+.chform{display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--line); align-items:flex-end}
+.chform textarea{flex:1; min-height:0; height:40px; resize:none}
+.chform .go{padding:9px 16px; border-radius:9px; border:1px solid var(--gold); background:var(--gold); color:var(--surface)}
+.chform .go:disabled{opacity:.5}
+#chCap{padding:0 14px}
 </style>
 
 <div class="app">
@@ -356,14 +373,16 @@ dialog.fb .cres{display:flex; flex-direction:column; gap:6px; margin-top:12px}
   <div class="row"><button type="button" id="fbCancel">إلغاء</button><button type="button" class="go" id="fbSend">إرسال</button></div>
 </dialog>
 
-<dialog class="fb" id="chDlg">
-  <h3>من تقصد؟</h3>
-  <p>صف الشخص بكلامك، مثل: «اسمه أحمد بن محمد وله عيال ومن آل محمد». أطلع لك المرشحين من الشجرة.</p>
-  <textarea id="chText" maxlength="300" style="min-height:70px" placeholder="اسمه… ابن… من آل…"></textarea>
-  <div id="chCap" style="margin-top:10px"></div>
-  <div class="msg" id="chMsg" role="status"></div>
-  <div class="cres" id="chRes"></div>
-  <div class="row"><button type="button" id="chClose">إغلاق</button><button type="button" class="go" id="chSend">ابحث</button></div>
+<dialog class="fb chat" id="chDlg">
+  <div class="chhead"><h3>اسأل عن شخص</h3><span>
+    <button type="button" id="chNew" title="محادثة جديدة">جديدة</button>
+    <button type="button" id="chClose" aria-label="إغلاق">✕</button></span></div>
+  <div class="chlog" id="chLog" aria-live="polite"></div>
+  <div id="chCap"></div>
+  <form class="chform" id="chForm">
+    <textarea id="chText" rows="1" maxlength="300" placeholder="اكتب رسالتك…"></textarea>
+    <button type="submit" class="go" id="chSend">إرسال</button>
+  </form>
 </dialog>
 <script>
 (function(){
@@ -1001,8 +1020,8 @@ document.getElementById("fbSend").addEventListener("click",function(){
     }).catch(function(){ msg.textContent="تعذّر الاتصال."; btn.disabled=false; });
 });
 
-/* مساعد "من تقصد؟": الـ LLM يستخرج فلاتر فقط، والمطابقة تتم هنا على بيانات الشجرة. */
-var CHAT_URL=FB_URL+"/chat", chTok="", chWidget=null;
+/* مساعد المحادثة: الـ LLM يستخرج فلاتر فقط، والمطابقة تتم هنا على بيانات الشجرة. */
+var CHAT_URL=FB_URL+"/chat", chTok="", chWidget=null, chF=null, chBusy=false, chSess="", chGen=0;
 function chHasKids(p){ return (kids[p.row]||[]).length>0 || p.st===2 || p.st===3; }
 function chMatch(f, drop){
   var nm=f.first_name?norm(f.first_name):"", fa=f.father_name?norm(f.father_name):"", gf=f.grandfather_name?norm(f.grandfather_name):"";
@@ -1014,7 +1033,8 @@ function chMatch(f, drop){
     if(f.main_branch && !drop.br && META.l1[p.b1]!==f.main_branch) return false;
     if(typeof f.alive==="boolean" && !drop.al && (p.st===0||p.st===1)!==f.alive) return false;
     if(typeof f.married==="boolean" && !drop.ma && (p.st>=1&&p.st<=4)!==f.married) return false;
-    if(typeof f.has_children==="boolean" && !drop.ch && chHasKids(p)!==f.has_children) return false;
+    if(typeof f.children_count==="number" && !drop.ch && (kids[p.row]||[]).length!==f.children_count) return false;
+    if(typeof f.children_count!=="number" && typeof f.has_children==="boolean" && !drop.ch && chHasKids(p)!==f.has_children) return false;
     return true;
   });
 }
@@ -1024,51 +1044,92 @@ function chUnderstood(f){
   if(f.father_name) a.push("أبوه "+f.father_name);
   if(f.grandfather_name) a.push("جده "+f.grandfather_name);
   if(f.main_branch) a.push("فرع "+f.main_branch);
-  if(typeof f.has_children==="boolean") a.push(f.has_children?"له أبناء":"بلا أبناء");
+  if(typeof f.children_count==="number") a.push(f.children_count===0?"بلا أبناء":(f.children_count===1?"له ابن واحد":"له "+ar(f.children_count)+" أبناء"));
+  else if(typeof f.has_children==="boolean") a.push(f.has_children?"له أبناء":"بلا أبناء");
   if(typeof f.alive==="boolean") a.push(f.alive?"حي":"متوفى");
   if(typeof f.married==="boolean") a.push(f.married?"متزوج":"أعزب");
   return a.join("، ");
 }
-function chShow(f){
-  var msg=document.getElementById("chMsg"), box=document.getElementById("chRes");
+function chBub(cls, text){
+  var log=document.getElementById("chLog"), d=document.createElement("div");
+  d.className="bub "+cls; d.textContent=text; log.appendChild(d); log.scrollTop=log.scrollHeight; return d;
+}
+function chCards(bub, list){
+  list.forEach(function(p){
+    var b=document.createElement("button"); b.type="button"; b.className="resrow";
+    b.innerHTML='<b>'+esc(p.name)+'</b> '+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
+      '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، '+STS[p.st]+'</span>';
+    b.addEventListener("click",function(){ document.getElementById("chDlg").close(); select(p,true); revealPanel(); });
+    bub.appendChild(b);
+  });
+  document.getElementById("chLog").scrollTop=1e9;
+}
+function chReply(f){
+  var u=chUnderstood(f);
+  if(!u){ chBub("a","ما فهمت وصف يفيد. اذكر الاسم، أو اسم أبيه، أو فرعه."); return; }
   var steps=[{},{ch:1},{ch:1,ma:1},{ch:1,ma:1,al:1},{ch:1,ma:1,al:1,gf:1},{ch:1,ma:1,al:1,gf:1,br:1}], out=[], k=0;
   for(;k<steps.length;k++){ out=chMatch(f,steps[k]); if(out.length) break; }
-  var u=chUnderstood(f);
-  if(!u){ msg.textContent="ما قدرت أفهم وصف يفيد، اذكر الاسم أو اسم الأب."; box.innerHTML=""; return; }
+  if(!out.length){ chBub("a","فهمت: "+u+".\nما لقيت أحد بهذي المواصفات. جرّب تغيّر أو تحذف شرط."); return; }
   out.sort(function(a,b){ return a.gen-b.gen; });
-  msg.textContent="فهمت: "+u+". "+(!out.length?"ما لقيت أحد.":
-    (k?"ما فيه تطابق كامل، هذي أقرب النتائج. ":"")+(out.length>8?"أول ٨ من "+ar(out.length)+".":ar(out.length)+" نتيجة."));
-  box.innerHTML=out.slice(0,8).map(function(p){
-    return '<button class="resrow" type="button" data-row="'+p.row+'"><b>'+esc(p.name)+'</b> '+
-      (p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
-      '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، '+STS[p.st]+'</span></button>'; }).join("");
-  box.querySelectorAll("[data-row]").forEach(function(b){
-    b.addEventListener("click",function(){ var pp=byRow[+b.dataset.row]; if(!pp) return;
-      document.getElementById("chDlg").close(); select(pp,true); revealPanel(); });
+  var t="فهمت: "+u+".\n";
+  if(k) t+="ما فيه تطابق كامل، هذي أقرب النتائج.";
+  else if(out.length===1) t+="هذا هو؟";
+  else if(out.length<=5) t+=ar(out.length)+" مرشحين، أيهم تقصد؟";
+  else{
+    var ask=[]; if(!f.father_name) ask.push("اسم أبيه"); if(!f.main_branch) ask.push("فرعه (محمد/خلف/سعد/ناصر)");
+    if(typeof f.alive!=="boolean") ask.push("هل هو حي أو متوفى");
+    t+=ar(out.length)+" نتيجة، كثير. ضيّق عليّ"+(ask.length?": قل لي "+ask.join(" أو "):"")+".\nهذي أقدم ٥:";
+  }
+  chCards(chBub("a",t), out.slice(0,5));
+}
+function chWidgetMount(){
+  if(chSess || chWidget!==null) return;
+  tsLoad(function(){
+    if(chSess || chWidget!==null) return;
+    chWidget=window.turnstile.render("#chCap",{sitekey:TS_KEY,appearance:"interaction-only",callback:function(t){ chTok=t; }});
   });
 }
 function chOpen(){
-  document.getElementById("chMsg").textContent=""; document.getElementById("chRes").innerHTML="";
-  document.getElementById("chSend").disabled=false;
   document.getElementById("chDlg").showModal();
-  tsLoad(function(){
-    if(chWidget!==null){ window.turnstile.reset(chWidget); chTok=""; return; }
-    chWidget=window.turnstile.render("#chCap",{sitekey:TS_KEY,callback:function(t){ chTok=t; }});
-  });
+  if(!document.getElementById("chLog").children.length) chBub("a","هلا! صف لي الشخص اللي تدور عليه، مثل:\n«اسمه أحمد بن محمد وله عيال ومن آل محمد».\nوتقدر تكمّل وتضيّق: «لا، هو متوفى».");
+  chWidgetMount();
+  document.getElementById("chText").focus();
 }
+function chSend(){
+  var ta=document.getElementById("chText"), text=ta.value.trim();
+  if(chBusy || text.length<2) return;
+  chBusy=true; document.getElementById("chSend").disabled=true;
+  ta.value=""; chBub("u",text);
+  var typing=chBub("a typing","…"), gen=chGen, tries=0;
+  function done(){ chBusy=false; document.getElementById("chSend").disabled=false; ta.focus(); }
+  (function go(){
+    if(gen!==chGen){ done(); return; }
+    if(!chSess && !chTok && tries++<40){ setTimeout(go,250); return; }   /* أول رسالة فقط: انتظر التحقق */
+    fetch(CHAT_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:text,prev:chF,sess:chSess,token:chTok}),credentials:"omit",referrerPolicy:"no-referrer"})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(gen!==chGen) return;                       /* المستخدم بدأ محادثة جديدة، تجاهل الرد */
+        typing.remove();
+        if(j.ok){
+          if(j.sess){ chSess=j.sess; if(chWidget!==null){ window.turnstile.remove(chWidget); chWidget=null; } }
+          chF=j.filters||{}; chReply(chF);
+        }else{
+          if(j.err==="captcha"){ chSess=""; chTok=""; if(chWidget!==null){ window.turnstile.reset(chWidget); } else chWidgetMount(); }
+          chBub("a",j.err==="captcha"?"انتهى التحقق، أكمله ثم أعد رسالتك.":"ما اشتغل، جرّب مرة ثانية.");
+        }
+      })
+      .catch(function(){ if(gen===chGen){ typing.remove(); chBub("a","تعذّر الاتصال."); } })
+      .then(function(){ chTok=""; done(); });
+  })();
+}
+document.getElementById("chForm").addEventListener("submit",function(e){ e.preventDefault(); chSend(); });
+document.getElementById("chText").addEventListener("keydown",function(e){
+  if(e.key==="Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); chSend(); } });
 document.getElementById("chClose").addEventListener("click",function(){ document.getElementById("chDlg").close(); });
-document.getElementById("chSend").addEventListener("click",function(){
-  var btn=this, msg=document.getElementById("chMsg"), text=document.getElementById("chText").value.trim();
-  if(text.length<2){ msg.textContent="اكتب وصف الشخص أول."; return; }
-  if(!chTok){ msg.textContent="انتظر التحقق ثواني."; return; }
-  btn.disabled=true; msg.textContent="…أفكّر";
-  fetch(CHAT_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({text:text,token:chTok}),credentials:"omit",referrerPolicy:"no-referrer"})
-    .then(function(r){ return r.json(); })
-    .then(function(j){ if(j.ok) chShow(j.filters||{}); else msg.textContent="ما اشتغل، جرّب مرة ثانية."; })
-    .catch(function(){ msg.textContent="تعذّر الاتصال."; })
-    .then(function(){ btn.disabled=false; if(chWidget!==null){ window.turnstile.reset(chWidget); chTok=""; } });
-});
+document.getElementById("chNew").addEventListener("click",function(){
+  chGen++; chF=null; chBusy=false; document.getElementById("chSend").disabled=false;
+  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة. صف لي الشخص."); });
 function panel(){
   var el=document.getElementById("side");
   if(panelMode==="meet" && results.length){ renderResults(el); return; }
@@ -1180,7 +1241,7 @@ function descCount(p){
   return n;
 }
 function introHTML(){
-  return '<button type="button" class="chatbtn" data-chat>ما تذكر النسب كامل؟ صف الشخص بكلامك</button>'+
+  return '<button type="button" class="chatbtn" data-chat>اسأل عن شخص: صفه بكلامك وأطلعه لك</button>'+
     '<h3>دوّر على اسمك</h3>'+
     '<p class="hint">اكتب الاسم مع أبيه وجدّه، مثل: <b>خالد بن محمد بن سعد</b>. '+
     'الاسم وحده ما يكفي، ففي الشجرة ١٨٣ «خالد».</p>'+
