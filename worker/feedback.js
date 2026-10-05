@@ -28,45 +28,43 @@ async function human(token, env) {
   return !!v.success;
 }
 
-// الـ LLM يحوّل وصف الشخص لفلاتر فقط. ما يشوف بيانات الشجرة ولا يجاوب من عنده.
-const TOOL = {
-  name: "find_person",
-  description: "استخرج مما كتبه المستخدم الحقول المذكورة صراحةً فقط عن الشخص المطلوب. لا تخمّن ولا تضف حقلًا غير مذكور.",
-  input_schema: {
-    type: "object",
-    properties: {
-      first_name: { type: "string", description: "اسم الشخص نفسه فقط، بدون بن/أبيه" },
-      father_name: { type: "string", description: "اسم أبيه إن ذُكر (فلان بن X)" },
-      grandfather_name: { type: "string", description: "اسم جده إن ذُكر" },
-      main_branch: { type: "string", enum: ["محمد", "خلف", "سعد", "ناصر"], description: "الفرع الرئيسي: «من آل X» أو «من فرع X»" },
-      has_children: { type: "boolean", description: "true إذا ذُكر أن له أولادًا/عيالًا، false إذا ذُكر أنه بلا عقب" },
-      alive: { type: "boolean", description: "true حي، false متوفى" },
-      married: { type: "boolean", description: "true متزوج، false أعزب" },
-    },
-  },
-};
+// الـ LLM (GLM) يحوّل وصف الشخص لفلاتر فقط. ما يشوف بيانات الشجرة ولا يجاوب من عنده.
+const SYSTEM = `أنت تساعد في تحديد شخص في شجرة عائلة. حوّل وصف المستخدم إلى JSON فقط، بدون أي شرح.
+الحقول (اذكر فقط ما ورد صراحةً في كلام المستخدم، ولا تخمّن):
+- first_name: اسم الشخص نفسه فقط (الاسم قبل «بن»)
+- father_name: اسم أبيه
+- grandfather_name: اسم جده
+- main_branch: واحد من ["محمد","خلف","سعد","ناصر"] («من آل X» أو «من فرع X»)
+- has_children: true إذا له أولاد/عيال، false إذا بلا عقب
+- alive: true حي، false متوفى
+- married: true متزوج، false أعزب
+مثال: «اسمه أحمد بن محمد وله عيال ومن آل محمد» ->
+{"first_name":"أحمد","father_name":"محمد","main_branch":"محمد","has_children":true}`;
 
 async function chat(d, env, origin) {
   const text = String(d.text || "").trim().slice(0, 300);
   if (text.length < 2) return reply({ ok: false, err: "empty" }, 400, origin);
   if (!(await human(d.token, env))) return reply({ ok: false, err: "captcha" }, 403, origin);
 
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const r = await fetch(env.GLM_URL, {
     method: "POST",
-    headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    headers: { Authorization: `Bearer ${env.GLM_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
+      model: env.GLM_MODEL,
+      temperature: 0,
       max_tokens: 250,
-      system: "أنت تساعد في تحديد شخص في شجرة عائلة. حوّل وصف المستخدم إلى فلاتر عبر الأداة فقط. الاسم المذكور قبل «بن» هو اسم الشخص، وما بعده أبوه ثم جده. لا تضف أي معلومة لم تُذكر.",
-      tools: [TOOL],
-      tool_choice: { type: "tool", name: "find_person" },
-      messages: [{ role: "user", content: text }],
+      response_format: { type: "json_object" },
+      messages: [{ role: "system", content: SYSTEM }, { role: "user", content: text }],
     }),
   });
   if (!r.ok) return reply({ ok: false, err: "llm" }, 502, origin);
   const j = await r.json();
-  const f = (j.content || []).find((c) => c.type === "tool_use");
-  return reply({ ok: true, filters: f ? f.input : {} }, 200, origin);
+  let f = {};
+  try {
+    const raw = String(j.choices?.[0]?.message?.content || "");
+    f = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
+  } catch { return reply({ ok: false, err: "parse" }, 502, origin); }
+  return reply({ ok: true, filters: f }, 200, origin);
 }
 
 export default {
