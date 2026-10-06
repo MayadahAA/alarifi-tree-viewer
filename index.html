@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<!-- Cloudflare Web Analytics -->
+<script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b9dddc30ad2e460d87791723966fcc7f"}'></script>
+<!-- End Cloudflare Web Analytics -->
 <script>(function(){try{var t=localStorage.getItem("arifiTheme");if(/^(light|dark)$/.test(t))document.documentElement.setAttribute("data-theme",t);else localStorage.removeItem("arifiTheme");}catch(e){}})();</script>
 <title>مستعرض شجرة العرافا</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1110,7 +1113,7 @@ function chFromLine(p, nm, fa){   /* لغير الفروع الفرعية: هل 
    لأن مؤسسي الفروع (مثل صقر بن ناصر بن جماز) آباؤهم مرسومين كأجداد مو كأشخاص */
 function chUpName(p, k){
   var cur=p, i=-1;
-  while(k-->0){
+  while(k-- > 0){
     if(cur){ if(cur.fa && byRow[cur.fa]){ cur=byRow[cur.fa]; continue; } i=cur.ancParent; cur=null; }
     else i=META.ancestors[i].parent;
     if(!cur && !(i>=0)) return "";
