@@ -429,7 +429,7 @@ var STATUS_UNKNOWN="الحالة غير مدوّنة في اللوحة";
 var P=[], byRow={}, kids={}, META=null, grid={}, CELL=60, totalNames=0;
 var nameCount={}, tripleCount={}, genStat={}, elders=[];
 var houses=[], houseSel=null, houseMembers=null;
-var tintImg={}, tintCache={}, poster=null;
+var tintImg={}, tintCache={}, poster=null, initialPalettePending=true, fullPosterQueued=false;
 var mode=2, showLabels=true, drawerOpen=false, sel=null, results=[], resSet=null, panelMode="intro", rareList=null;
 var THEME_KEY="arifiTheme", THEMES=["light","dark"];
 var meet=[null,null], meetSlot=0;
@@ -607,7 +607,9 @@ function draw(){
   c.save();
   c.translate(view.x,view.y); c.scale(view.s,view.s);
   c.imageSmoothingQuality="high";
-  if(mode===0) c.drawImage(poster,0,0,WORLD.w,WORLD.h);
+  /* أول صورة لازم تظهر بأسرع ما يمكن: نرسم الملصق مباشرة، ثم نولّد طبقة الألوان
+     وقت خمول المتصفح. هذا يمنع معالجة الـ pixels الثقيلة من تأخير أول ظهور للشجرة. */
+  if(mode===0 || initialPalettePending) c.drawImage(poster,0,0,WORLD.w,WORLD.h);
   else{
     var t=tintCanvas(mode);
     if(t) c.drawImage(t,0,0,WORLD.w,WORLD.h);
@@ -1837,7 +1839,9 @@ function wire(){
   };
   [0,2].forEach(function(m){
     document.getElementById("m"+m).onclick=function(){
-      mode=m; [0,2].forEach(function(k){ document.getElementById("m"+k).setAttribute("aria-pressed", k===m?"true":"false"); });
+      mode=m;
+      if(m===2) initialPalettePending=false;
+      [0,2].forEach(function(k){ document.getElementById("m"+k).setAttribute("aria-pressed", k===m?"true":"false"); });
       draw();
     };
   });
@@ -1893,17 +1897,39 @@ function wire(){
 function loadImg(src){ return new Promise(function(res){ var i=new Image();
   i.onload=function(){res(i);}; i.onerror=function(){res(null);}; i.src=src; }); }
 
+function whenIdle(fn, timeout){
+  if("requestIdleCallback" in window) window.requestIdleCallback(fn,{timeout:timeout});
+  else setTimeout(fn, Math.min(timeout,300));
+}
+
+function promotePoster(){
+  if(fullPosterQueued) return;
+  fullPosterQueued=true;
+  /* الأصل يبقى متاحًا للتكبير، لكن لا ينافس أول شاشة على الشبكة أو فك الضغط. */
+  whenIdle(function(){
+    loadImg("tree.jpg").then(function(full){ if(full){
+      poster=full;
+      /* طبقة الألوان تمزج نسيج الملصق؛ نعيد بناءها من الأصل بدون حجب أول ظهور. */
+      tintCache={};
+      whenIdle(draw, 500);
+    } });
+  }, 2500);
+}
+
 Promise.all([
   fetch("alarifi_people.csv").then(function(r){return r.text();}).catch(function(){return "";}),
   fetch("meta.json").then(function(r){return r.json();}).catch(function(){return null;}),
   fetch("alarifi_houses.csv").then(function(r){return r.text();}).catch(function(){return "";}),
-  loadImg("tree.jpg"), loadImg("tint_main.png"), loadImg("tint_sub.png")
+  loadImg("tree-preview.jpg"), loadImg("tint_sub.png")
 ]).then(function(v){
   if(!v[0]||!v[1]){ document.getElementById("load").textContent="تعذّر تحميل البيانات"; return; }
-  poster=v[3]; tintImg[1]=v[4]; tintImg[2]=v[5]; tintCache={};
+  poster=v[3]; tintImg[2]=v[4]; tintCache={};
   wire();
   resize();
   boot(parseCSV(v[0]), v[1], v[2]?parseCSV(v[2]):null);
+  /* نعطي المتصفح فرصة يرسم النسخة الخفيفة أولًا، ثم نركّب الألوان ونحمّل الأصل. */
+  whenIdle(function(){ initialPalettePending=false; draw(); }, 800);
+  promotePoster();
 });
 })();
 </script>
