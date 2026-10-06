@@ -110,9 +110,10 @@ button{font:inherit; color:var(--ink); cursor:pointer}
 .src h4:focus-visible{outline:2px solid var(--gold); outline-offset:3px}
 .src b{color:var(--ink); font-weight:600}
 .src p{margin:8px 0 0}
-.body{flex:1 1 auto; display:flex; min-height:0}
+.body{--details-w:360px; --chat-w:clamp(320px,25vw,360px); flex:1 1 auto; display:grid; min-height:0;
+  grid-template-columns:minmax(0,1fr) var(--details-w); grid-template-areas:"stage details"}
 .searchslot{display:none}
-.stage{flex:1 1 auto; display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--canvasbg)}
+.stage{grid-area:stage; display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--canvasbg); direction:rtl}
 .cwrap{flex:1 1 auto; position:relative; min-height:0}
 canvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab}
 canvas.drag{cursor:grabbing}
@@ -129,8 +130,12 @@ canvas.drag{cursor:grabbing}
 .crumbs button:hover{border-color:var(--gold)}
 .crumbs span{color:var(--muted); font-size:11px}
 
-.side{flex:0 0 360px; border-inline-start:1px solid var(--line); background:var(--surface);
-  overflow:auto; padding:14px}
+.side{grid-area:details; border-inline-start:1px solid var(--line); background:var(--surface);
+  overflow:auto; padding:14px; direction:rtl}
+.chat-panel{grid-area:chat; display:none; min-width:0; min-height:0; background:var(--surface);
+  border-inline-end:1px solid var(--line); flex-direction:column; direction:rtl}
+.body.chat-open{grid-template-columns:var(--chat-w) minmax(480px,1fr) var(--details-w); grid-template-areas:"chat stage details"}
+.body.chat-open .chat-panel{display:flex}
 @media(max-width:820px){
   body{overflow:auto}
   .app{height:auto; min-height:100%}
@@ -150,7 +155,16 @@ canvas.drag{cursor:grabbing}
   .assistant-trigger{width:36px; min-width:36px; height:36px; padding:0}
   .assistant-trigger span:last-child{display:none}
   .pname{font-size:24px}
+  .chat-panel{position:fixed; inset:0; z-index:30; border:0; transform:translateX(100%); transition:transform 180ms ease-out}
+  .body.chat-open .chat-panel{display:flex; transform:translateX(0)}
 }
+@media(min-width:821px) and (max-width:1179px){
+  .body.chat-open{grid-template-columns:minmax(0,1fr) var(--details-w); grid-template-areas:"stage details"}
+  .chat-panel{position:fixed; inset-block:0; inset-inline-end:0; z-index:22; width:min(360px,calc(100vw - 420px));
+    transform:translateX(100%); transition:transform 180ms ease-out}
+  .body.chat-open .chat-panel{display:flex; transform:translateX(0)}
+}
+@media(prefers-reduced-motion:reduce){.chat-panel{transition:none!important}}
 .backbtn[hidden]{display:none}
 .backbtn{display:block; width:100%; text-align:start; font:inherit; cursor:pointer;
   background:var(--sunk); border:1px solid var(--line2); border-radius:9px;
@@ -275,11 +289,19 @@ dialog.fb .cres{display:flex; flex-direction:column; gap:6px; margin-top:12px}
 .chatbtn b{font-size:14px}
 .chatbtn span{margin-top:3px; color:var(--muted); font-size:12px; line-height:1.7}
 
-dialog.chat{padding:0; display:none; flex-direction:column; height:min(600px,86vh)}
-dialog.chat[open]{display:flex}
-.chhead{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line)}
-.chhead h3{margin:0}
-.chhead button{background:none; border:1px solid var(--line2); border-radius:8px; padding:4px 10px; font-size:13px; margin-inline-start:6px}
+.chhead{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+.chhead h2{margin:0; font-family:Amiri,serif; font-size:22px; line-height:1.2}
+.chhead small{display:block; margin-top:2px; color:var(--muted); font-size:11px}
+.chcontrols{display:flex; align-items:center; gap:6px}
+.chhead button{background:none; border:1px solid var(--line2); border-radius:8px; min-height:36px; padding:5px 10px; color:var(--ink); font:inherit; font-size:13px}
+.chhead button:hover{border-color:var(--gold); color:var(--gold)}
+.chclose{width:36px; padding:0!important; font-size:19px!important}
+.chcontext{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 14px; background:var(--sunk); border-bottom:1px solid var(--line)}
+.chcontext[hidden]{display:none}
+.chcontext span{display:block; color:var(--muted); font-size:10.5px}
+.chcontext b{display:block; max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:Amiri,serif; font-size:15px}
+.chcontext button{flex:0 0 auto; min-height:34px; background:none; border:1px solid var(--line2); border-radius:8px; padding:5px 9px; color:var(--ink); font:inherit; font-size:12px}
+.chcontext button:hover{border-color:var(--gold); color:var(--gold)}
 .chlog{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px}
 .bub{max-width:88%; padding:9px 12px; border-radius:14px; font-size:14px; line-height:1.7; white-space:pre-wrap}
 .bub.u{align-self:flex-start; background:var(--gold); color:var(--surface); border-end-start-radius:4px}
@@ -287,7 +309,7 @@ dialog.chat[open]{display:flex}
 .bub.a .resrow{display:block; width:100%; margin-top:6px; text-align:start}
 .bub.typing{color:var(--muted)}
 .bub.err .go{margin-top:8px; padding:6px 14px; border-radius:9px; border:1px solid var(--gold); background:var(--gold); color:var(--surface); font:inherit; cursor:pointer}
-.chform{display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--line); align-items:flex-end}
+.chform{display:flex; gap:8px; padding:10px 14px max(10px,env(safe-area-inset-bottom)); border-top:1px solid var(--line); align-items:flex-end}
 .chform textarea{flex:1; min-height:0; height:40px; resize:none}
 .chform .go{padding:9px 16px; border-radius:9px; border:1px solid var(--gold); background:var(--gold); color:var(--surface)}
 .chform .go:disabled{opacity:.5}
@@ -304,7 +326,7 @@ dialog.chat[open]{display:flex}
         <input type="search" id="q" placeholder="ابحث باسم، أو بنسب: خالد بن محمد بن سعد" autocomplete="off" aria-label="بحث">
         <span class="hitcount" id="hits"></span>
       </div>
-      <button class="ico assistant-trigger" id="assistantTrigger" type="button" aria-label="اسأل المساعد" title="اسأل المساعد"><span class="spark" aria-hidden="true">✦</span><span>اسأل</span></button>
+      <button class="ico assistant-trigger" id="assistantTrigger" type="button" aria-label="اسأل المساعد" aria-expanded="false" title="اسأل المساعد"><span class="spark" aria-hidden="true">✦</span><span>اسأل</span></button>
     </div>
     <div class="seg" role="group" aria-label="طبقة التلوين">
       <button id="m0" type="button" aria-pressed="false">الرسم الأصلي</button>
@@ -362,6 +384,19 @@ dialog.chat[open]{display:flex}
       <button class="backbtn" id="back" type="button" hidden></button>
       <div id="side"></div>
     </aside>
+    <aside class="chat-panel" id="chatPanel" aria-label="محادثة المساعد" aria-hidden="true">
+      <div class="chhead"><div><h2>اسأل المساعد</h2><small>مربوط بالشجرة المفتوحة</small></div><div class="chcontrols">
+        <button type="button" id="chNew" title="محادثة جديدة">جديدة</button>
+        <button type="button" class="chclose" id="chClose" aria-label="إغلاق">×</button></div></div>
+      <div class="chcontext" id="chContext" hidden><div><span>سياق الشخص المحدد</span><b id="chContextName"></b></div>
+        <button type="button" id="chUseContext">استخدمه في السؤال</button></div>
+      <div class="chlog" id="chLog" aria-live="polite"></div>
+      <div id="chCap"></div>
+      <form class="chform" id="chForm">
+        <textarea id="chText" rows="1" maxlength="300" placeholder="اكتب رسالتك…"></textarea>
+        <button type="submit" class="go" id="chSend">إرسال</button>
+      </form>
+    </aside>
   </div>
 </div>
 
@@ -376,17 +411,6 @@ dialog.chat[open]{display:flex}
   <div class="row"><button type="button" id="fbCancel">إلغاء</button><button type="button" class="go" id="fbSend">إرسال</button></div>
 </dialog>
 
-<dialog class="fb chat" id="chDlg">
-  <div class="chhead"><h3>اسأل المساعد</h3><span>
-    <button type="button" id="chNew" title="محادثة جديدة">جديدة</button>
-    <button type="button" id="chClose" aria-label="إغلاق">✕</button></span></div>
-  <div class="chlog" id="chLog" aria-live="polite"></div>
-  <div id="chCap"></div>
-  <form class="chform" id="chForm">
-    <textarea id="chText" rows="1" maxlength="300" placeholder="اكتب رسالتك…"></textarea>
-    <button type="submit" class="go" id="chSend">إرسال</button>
-  </form>
-</dialog>
 <script>
 (function(){
 "use strict";
@@ -822,7 +846,7 @@ function select(p, fly){
   sel=p||null;
   if(p && fly) flyTo(p, Math.max(view.s, 1.3));
   else draw();
-  panel(); crumbs();
+  panel(); crumbs(); chSyncContext();
 }
 
 /* ---------- اللوحة ---------- */
@@ -1194,7 +1218,7 @@ function chCards(bub, list){
     var b=document.createElement("button"); b.type="button"; b.className="resrow";
     b.innerHTML='<b>'+esc(p.name)+'</b> '+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
       '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، '+statusHTML(p,true)+'</span>';
-    b.addEventListener("click",function(){ document.getElementById("chDlg").close(); select(p,true); revealPanel(); });
+    b.addEventListener("click",function(){ select(p,true); revealPanel(); chSyncContext(); });
     bub.appendChild(b);
   });
   document.getElementById("chLog").scrollTop=1e9;
@@ -1244,10 +1268,32 @@ var CH_ERR={
   ts_load:"تعذّر تحميل التحقق. افتح الموقع المنشور مباشرة، ثم جرّب مرة ثانية"
 };
 function chOpen(){
-  document.getElementById("chDlg").showModal();
+  var body=document.querySelector(".body"), panel=document.getElementById("chatPanel");
+  body.classList.add("chat-open"); panel.setAttribute("aria-hidden","false");
+  document.getElementById("assistantTrigger").setAttribute("aria-expanded","true");
+  chSyncContext();
+  requestAnimationFrame(resize);
   if(!document.getElementById("chLog").children.length) chBub("a",CH_HELLO);
   chWidgetMount();
   document.getElementById("chText").focus();
+}
+function chClose(){
+  document.querySelector(".body").classList.remove("chat-open");
+  document.getElementById("chatPanel").setAttribute("aria-hidden","true");
+  document.getElementById("assistantTrigger").setAttribute("aria-expanded","false");
+  requestAnimationFrame(resize);
+}
+function chSyncContext(){
+  var box=document.getElementById("chContext"), name=document.getElementById("chContextName");
+  if(!sel){ box.hidden=true; name.textContent=""; return; }
+  name.textContent=sel.short||sel.name;
+  box.hidden=false;
+}
+function chUseContext(){
+  if(!sel) return;
+  var ta=document.getElementById("chText"), nasab=fullChain(sel).slice(0,4).map(function(n){ return n.name; }).join(" بن ");
+  ta.value=(ta.value.trim()?ta.value.trim()+" ":"")+"عن "+nasab;
+  ta.focus();
 }
 document.getElementById("assistantTrigger").addEventListener("click",chOpen);
 /* يحذف أقدم دور كامل (user وكل اللي بعده لين user التالي) لين المجموع يدخل في الحد.
@@ -1347,11 +1393,12 @@ function chSend(){
 document.getElementById("chForm").addEventListener("submit",function(e){ e.preventDefault(); chSend(); });
 document.getElementById("chText").addEventListener("keydown",function(e){
   if(e.key==="Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); chSend(); } });
-document.getElementById("chClose").addEventListener("click",function(){ document.getElementById("chDlg").close(); });
+document.getElementById("chClose").addEventListener("click",chClose);
+document.getElementById("chUseContext").addEventListener("click",chUseContext);
 document.getElementById("chNew").addEventListener("click",function(){
   chGen++; if(chCtl) chCtl.abort(); chCtl=null;
   chMsgs=[]; chBusy=false; document.getElementById("chSend").disabled=false;
-  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة. وش تبي تعرف؟"); });
+  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة. وش تبي تعرف؟"); chSyncContext(); });
 function sectionTitle(label, count){
   return '<div class="sectionhead"><h3>'+label+'</h3><span class="sectioncount">'+ar(count)+'</span></div>';
 }
@@ -1813,7 +1860,8 @@ function wire(){
   document.addEventListener("keydown",function(e){
     var editable=e.target.matches("input, textarea, select, [contenteditable='true']");
     if(editable) { if(e.target===q && e.key==="Escape"){ q.value=""; search(""); } return; }
-    if(e.target.closest("dialog[open]")) return;   /* الكتابة بالشات/الملاحظات ما تتأثر بالاختصارات */
+    if(e.key==="Escape" && document.querySelector(".body").classList.contains("chat-open")){ chClose(); return; }
+    if(e.target.closest("dialog[open], .chat-panel")) return;   /* ما تتسرب اختصارات الشجرة من لوحة المحادثة */
     if(e.key==="m"||e.key==="M"){ setDrawer(!drawerOpen); return; }
     if(e.key==="Escape"){ if(drawerOpen){ setDrawer(false); return; } goBack(); }
     if(e.key==="Backspace"){ e.preventDefault(); goBack(); }
