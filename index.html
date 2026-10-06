@@ -866,14 +866,22 @@ function plural(n,one,two,few,many){
 }
 function genWord(n){ return n===1?"جيل":(n===2?"جيلان":"أجيال"); }
 function genPhrase(n){ return n===1?"جيل واحد":(n===2?"جيلين":(n<11?ar(n)+" أجيال":ar(n)+" جيلًا")); }
-function relWord(da,db,na,nb){
-  if(da===0||db===0){ var n=Math.max(da,db);
-    return n===1 ? "أب وابنه" : "جدّ وحفيده بينهما "+genPhrase(n); }
-  if(da===1&&db===1) return "إخوة";
-  if(da===2&&db===2) return "أولاد عم";
-  if(da===db) return "أولاد عم من الدرجة "+ar(da-1);
-  var near = da<db ? na : nb, d=Math.abs(da-db);
-  return "قرابة متباعدة، "+near+" أقرب إلى الجدّ المشترك بـ"+genPhrase(d);
+function ancestorWord(n){ return n===1 ? "أب مباشر" : (n===2 ? "جد مباشر" : "جد بعيد يفصل بينهما "+genPhrase(n)); }
+function descendantWord(n){ return n===1 ? "ابن" : (n===2 ? "حفيد" : "حفيد بعيد يفصل بينهما "+genPhrase(n)); }
+function uncleWord(n){ return n===2 ? "عم مباشر" : "عم "+Array(n-1).join("جد ").trim(); }
+function nephewWord(n){ return Array(n-1).fill("ابن").join(" ")+" أخ"; }
+/* علاقة موجّهة: a_to_b تصف الأول بالنسبة للثاني، عشان المساعد ما يستنتج الاتجاه من فرق الأجيال. */
+function relationWords(da,db){
+  if(da===0&&db===0) return {relation:"نفس الشخص",a_to_b:"هو نفسه",b_to_a:"هو نفسه"};
+  if(da===0) return {relation:"نسب مباشر",a_to_b:ancestorWord(db),b_to_a:descendantWord(db)};
+  if(db===0) return {relation:"نسب مباشر",a_to_b:descendantWord(da),b_to_a:ancestorWord(da)};
+  if(da===1&&db===1) return {relation:"إخوة بحسب الشجرة",a_to_b:"أخ بحسب الشجرة",b_to_a:"أخ بحسب الشجرة"};
+  if(da===1) return {relation:"عمومة",a_to_b:uncleWord(db),b_to_a:nephewWord(db)};
+  if(db===1) return {relation:"عمومة",a_to_b:nephewWord(da),b_to_a:uncleWord(da)};
+  var degree=Math.min(da,db)-1, cousins=degree===1 ? "ابن عم" : "ابن عم من الدرجة "+ar(degree);
+  if(da===db) return {relation:"أبناء عم",a_to_b:cousins,b_to_a:cousins};
+  var gap=genPhrase(Math.abs(da-db));
+  return {relation:"أبناء عم بفارق أجيال",a_to_b:cousins+" وبينهما فرق "+gap,b_to_a:cousins+" وبينهما فرق "+gap};
 }
 function chainOf(p){
   var out=[], cur=p, g=0;
@@ -1171,8 +1179,9 @@ var CH_TOOLS={
     seen.push(x); seen.push(y);
     var m=meetPoint(x,y); if(!m) return {error:"ما وصلنا لجد مشترك في اللوحة"};
     var da=x.gen-m.node.gen, db=y.gen-m.node.gen;
+    var r=relationWords(da,db);
     return {common_ancestor:m.A.slice(m.ai).map(function(n){ return n.name; }).slice(0,4).join(" بن "),
-      generations_from_a:da, generations_from_b:db, relation:relWord(da,db,x.name,y.name)};
+      generations_from_a:da, generations_from_b:db, relation:r.relation, a_to_b:r.a_to_b, b_to_a:r.b_to_a};
   }
 };
 
@@ -1274,7 +1283,7 @@ function chSend(){
   ta.value="";
   var ubub=chBub("u",text), typing=chBub("a typing",chSessOk()||chTok?"أفكّر…":"أتحقق أول…");
   /* الدور الحالي يتجمع هنا، وما يدخل chMsgs إلا لما يكتمل */
-  var turn=[{role:"user",content:text}], steps=0, seen=[];
+  var turn=[{role:"user",content:text}], steps=0, seen=[], t0=performance.now();
   var live=function(){ return gen===chGen; };
   function done(){ if(!live()) return; chBusy=false; chCtl=null; btn.disabled=false; ta.focus(); }
   function fail(err){
@@ -1290,13 +1299,18 @@ function chSend(){
     done();
   }
   function step(){
+    var ts=performance.now();
     chToken().then(function(tok){
       if(!live()) return;
+      var tp=performance.now();
       if(tok) chTok="";   /* الـ token ينفع مرة وحدة، حتى لو انلغى الطلب */
       return chPost(turn, tok, ctl.signal).then(function(j){
         /* الجلسة عامة مو خاصة بالمحادثة، فنحفظها حتى لو الطلب صار قديم */
         if(j.sess){ chSess=j.sess; if(chWidget!==null){ window.turnstile.remove(chWidget); chWidget=null; } }
         if(!live()) return;
+        /* قياس كل جولة: التحقق، الطلب كامل، وكم منه داخل GLM (الباقي شبكة + Worker) */
+        console.info("[chat] جولة "+(steps+1)+": تحقق "+Math.round(tp-ts)+"ms، طلب "+Math.round(performance.now()-tp)+"ms"+(j.ms?" (GLM "+j.ms+"ms)":"")+
+          (j.message&&j.message.tool_calls?"، أدوات: "+j.message.tool_calls.map(function(c){ return c.function.name; }).join("، "):""));
         if(!j.ok){
           if(j.err==="captcha") chSess="";
           else if(tok && !j.sess) chCapReset();
@@ -1319,6 +1333,7 @@ function chSend(){
         seen.forEach(function(p){ var fn=chUpName(p,1);
           if(uniq.indexOf(p)<0 && nt.indexOf(norm(p.name+(fn?" بن "+fn:"")))>=0) uniq.push(p); });
         chCards(chBub("a",txt), uniq.slice(0,5));
+        console.info("[chat] المجموع "+Math.round(performance.now()-t0)+"ms في "+(steps+1)+" جولات");
         done();
       });
     }).catch(function(e){
