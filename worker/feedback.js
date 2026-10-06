@@ -30,26 +30,41 @@ async function human(token, env) {
 
 // الـ LLM (GLM) ما يشوف ملف الشجرة. يطلب أدوات، والمتصفح ينفذها على البيانات ويرجّع النتيجة.
 const SYSTEM = `أنت مساعد شجرة أسرة العريفي. تجاوب بلهجة سعودية بسيطة ومختصرة.
-القواعد:
-- كل معلومة عن الأشخاص والأعداد لازم تجي من الأدوات. لا تخمّن ولا تخترع أي اسم أو رقم.
-- لو الشخص المقصود غامض (أكثر من نتيجة)، اسأل المستخدم يحدد (اسم الأب أو الجد أو الفرع) قبل ما تكمل.
-- لا تكتب أرقام الصفوف (row) للمستخدم؛ هي للأدوات فقط.
-- عرف الناس: «آل X» يعني الفرع الفرعي X (آل سعد = سعد بن ناصر، آل صقر = صقر بن ناصر)، إلا «آل محمد» بدون أب = فرع محمد بن سالم. «فرع X» صراحة = الفرع الرئيسي.
-- الحالات في البيانات: أعزب حي، متزوج حي، متزوج متوفى له عقب ذكور وإناث، متزوج متوفى له عقب إناث فقط، متزوج متوفى ليس له عقب، أعزب متوفى.
-  لو سُئلت «كم متزوج» اذكر المتزوجين الأحياء، واذكر بعدها المتزوجين المتوفين كمعلومة منفصلة.
-- الأبناء المحسوبين هم الذكور المرسومين في اللوحة. البيانات من لوحة «شجرة العريفي ١٤٤٥هـ» وقد تكون تغيرت بعدها.
-- أي اسم أو رقم أو قرابة تذكرها لازم يكون موجود حرفيًا في نتيجة أداة. لو ما عندك نتيجة تكفي، استدعِ أداة أو قل إنك ما تعرف.
-- لو رجعت أداة error، صحّح الطلب أو اسأل المستخدم؛ لا تكمل على افتراض.
-- لا تجاوب عن أي موضوع خارج الشجرة.`;
+مصدر الحقيقة والنطاق:
+- كل معلومة عن الأشخاص أو الأعداد أو القرابة لازم تجي من الأدوات. لا تخمّن ولا تضف معلومة من النسب أو المعرفة العامة.
+- المصدر لوحة «شجرة العريفي ١٤٤٥هـ» وقد تكون تغيرت بعدها. هي شجرة أبوية؛ لا تقل شقيق أو خال أو قرابة من جهة الأم إلا إذا رجعت الأداة ذلك صراحة.
+- الأبناء المحسوبون هم الذكور المرسومون في اللوحة.
+- أي اسم أو رقم أو قرابة تذكرها لازم يكون موجودًا في نتيجة أداة. لو ما عندك نتيجة تكفي، قل إن المعلومة غير ظاهرة في الشجرة.
+- لا تجاوب عن أي موضوع خارج الشجرة.
+اختيار الأدوات:
+- الاسم الغامض: لو ظهر أكثر من شخص، اسأل المستخدم يحدد باسم الأب أو الجد أو الفرع. الاستثناء: إذا كانت نتيجة واحدة founder_of عند ذكر «X بن Y» فهي المقصودة.
+- إذا كتب المستخدم نسبًا بلا «بن»، مرر الأسماء المتتالية كما هي في nasab. لو رجع note عن عدم تطابق جزء، اذكر الجزء غير المطابق والأقرب؛ لا تفترض.
+- يمكنك طلب find_people للشخصين بالتوازي. لا تستدعِ relation إلا بعد معرفة row الصحيح للشخصين.
+- «ذرية X» أو «أولاد X» أو «من نسل X»: حدّد row أولًا ثم استخدم count_descendants أو descendant_of. الذرية لا تشمل X نفسه.
+- سؤال القرابة: استدعِ relation. a_to_b يصف الشخص الأول بالنسبة للثاني، وb_to_a العكس. انسخ المسمى كما هو؛ لا تستنتج مسمى من فرق الأجيال أو تعيد تفسيره.
+- لو صحّح المستخدم أو وضّح، طبّق التوضيح على سؤاله السابق وأجب عنه من جديد.
+- لا تكتب row للمستخدم. لو رجعت أداة error، صحّح الطلب أو اسأل؛ لا تكمل على افتراض.
+تعريفات البيانات:
+- «آل X» فرع فرعي X، إلا «آل محمد» بلا أب فهو محمد بن سالم. «فرع X» صراحة هو الفرع الرئيسي.
+- الحالات: أعزب حي، متزوج حي، متزوج متوفى له عقب ذكور وإناث، متزوج متوفى له عقب إناث فقط، متزوج متوفى ليس له عقب، أعزب متوفى. سؤال «كم متزوج» يذكر الأحياء أولًا ثم المتوفين منفصلين.
+قوالب الرد:
+- القرابة: «[الشخص الأول] هو [a_to_b] لـ[الشخص الثاني]. الجد المشترك: [common_ancestor].» لا تضف شرحًا إلا إذا طلب المستخدم «اشرح».
+- العدد: ابدأ بالرقم، ثم الوصف. لا تسرد أسماء إلا بطلب صريح، وبحد أقصى خمسة مع nasab قصير.
+- الغموض: «لقيت أكثر من شخص باسم [الاسم]. تقصد [خيار ١] أو [خيار ٢]؟»
+- عدم الوجود أو نقص البيانات: «ما لقيت [المعلومة] في لوحة ١٤٤٥هـ.»
+- الشخص نفسه: «[الاسمان] هما نفس الشخص في الشجرة.»
+- نص عادي بلا markdown أو عناوين أو قوائم. جملة أو جملتان، وبحد أقصى ٢٢٠ حرفًا ما لم يطلب المستخدم شرحًا.
+مثال: إذا relation أعاد a_to_b = «عم مباشر»، فالجواب «نادر بن محمد بن عبدالعزيز هو عم مباشر لإياس بن سعد بن محمد بن عبدالعزيز. الجد المشترك: محمد بن عبدالعزيز.»`;
 
 const P_FILTERS = {
+  nasab: { type: "string", description: "النسب زي ما كتبه المستخدم، من الشخص للأعلى: «صقر ناصر عبدالله» أو «صقر بن ناصر بن عبدالله». الأفضل لأي اسمين أو أكثر" },
   first_name: { type: "string", description: "اسم الشخص نفسه" },
   father_name: { type: "string" },
   grandfather_name: { type: "string" },
   main_branch: { type: "string", enum: ["محمد", "خلف", "سعد", "ناصر"], description: "فقط إذا قال «فرع X» صراحة" },
   lineage_name: { type: "string", description: "«من آل X»: الاسم X" },
   lineage_father: { type: "string", description: "أبو X في «آل X بن Y»" },
-  descendant_of: { type: "integer", description: "row لجد: يحصر البحث في ذريته" },
+  descendant_of: { type: "integer", description: "row لجد: يحصر البحث في ذريته (بدون الجد نفسه)" },
   alive: { type: "boolean" },
   married: { type: "boolean", description: "true = تزوج (حي أو متوفى)" },
   has_children: { type: "boolean" },
@@ -58,10 +73,10 @@ const P_FILTERS = {
 const fn = (name, description, properties, required = []) =>
   ({ type: "function", function: { name, description, parameters: { type: "object", properties, required } } });
 const TOOLS = [
-  fn("find_people", "ابحث عن أشخاص بالمواصفات. يرجع العدد الكلي وأول ١٠.", P_FILTERS),
+  fn("find_people", "ابحث عن أشخاص بالمواصفات. يرجع العدد الكلي (total) وأول ١٠ مرتبين من الأقدم جيلًا. founder_of = هذا الشخص مؤسس فرع.", P_FILTERS),
   fn("get_person", "تفاصيل شخص: نسبه الكامل، حالته، فرعه، أبوه، أبناؤه، عدد ذريته.", { row: { type: "integer" } }, ["row"]),
   fn("count_descendants", "إحصاء ذرية شخص (كل من نزل منه): العدد حسب الحالة وحسب الجيل.", { row: { type: "integer" } }, ["row"]),
-  fn("relation", "القرابة بين شخصين: الجد المشترك وكم جيل بينهم.", { row_a: { type: "integer" }, row_b: { type: "integer" } }, ["row_a", "row_b"]),
+  fn("relation", "القرابة بين شخصين: يرجع الجد المشترك وa_to_b (الأول بالنسبة للثاني) وb_to_a (العكس) كمسميات حتمية، إضافة إلى فرق الأجيال.", { row_a: { type: "integer" }, row_b: { type: "integer" } }, ["row_a", "row_b"]),
 ];
 
 // حدود مشتركة: لازم تطابق CH_MAX_* في index.html
@@ -78,7 +93,7 @@ function badArgs(name, raw) {
   for (const k of Object.keys(a)) {
     const p = sc.properties[k], v = a[k];
     if (!p) return `حقل غير معروف: ${k}`;
-    if (p.type === "string" && (typeof v !== "string" || !v.trim() || v.length > 40)) return `${k}: نص غير صالح`;
+    if (p.type === "string" && (typeof v !== "string" || !v.trim() || v.length > (k === "nasab" ? 100 : 40))) return `${k}: نص غير صالح`;
     if (p.type === "integer" && (!Number.isInteger(v) || v < 0 || v > (INT_MAX[k] ?? 1e6))) return `${k}: رقم غير صالح`;
     if (p.type === "boolean" && typeof v !== "boolean") return `${k}: لازم true أو false`;
     if (p.enum && !p.enum.includes(v)) return `${k}: قيمة غير مسموحة`;
@@ -137,6 +152,7 @@ function vetCalls(calls) {
 
 // جلسة قصيرة بعد أول تحقق ناجح: توقيع HMAC على وقت الانتهاء، بدون تخزين أي شي عن المستخدم
 const SESS_MS = 30 * 60 * 1000;
+const GLM_TIMEOUT_MS = 25000;
 async function sign(msg, env) {
   const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.TURNSTILE_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const s = await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(msg));
@@ -160,15 +176,17 @@ async function chat(d, env, origin) {
   const fail = (err) => reply({ ok: false, err, sess }, 502, origin);
 
   let r;
+  const t0 = Date.now();
   try {
     r = await fetch(env.GLM_URL, {
+      signal: AbortSignal.timeout(GLM_TIMEOUT_MS),   // GLM أحيانًا يعلّق؛ الأفضل نفشل وتنعاد المحاولة بدل الانتظار للأبد
       method: "POST",
       headers: { Authorization: `Bearer ${env.GLM_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: env.GLM_MODEL,
         temperature: 0.2,
         max_tokens: 500,
-        thinking: { type: "disabled" },   // بدونها GLM يفكّر قبل الجواب: أبطأ بكثير ويستهلك التوكنز
+        enable_thinking: false,   // بدونها Qwen يفكّر قبل الجواب: أبطأ بكثير ويستهلك التوكنز
         tools: TOOLS,
         tool_choice: "auto",
         messages: [{ role: "system", content: SYSTEM }, ...msgs],
@@ -182,13 +200,17 @@ async function chat(d, env, origin) {
     console.log("glm", r.status, (await r.text()).slice(0, 300));   // يظهر في wrangler tail
     return fail("llm");
   }
-  let m;
-  try { m = (await r.json()).choices[0].message; } catch { m = null; }
+  let j, m;
+  try { j = await r.json(); m = j.choices[0].message; } catch { m = null; }
+  const ms = Date.now() - t0;
+  // قياس: كم أخذ GLM، كم توكن، وهل فكّر (reasoning) رغم thinking: disabled. يظهر في wrangler tail
+  console.log("glm", `${ms}ms`, j?.model, j?.choices?.[0]?.finish_reason, JSON.stringify(j?.usage || {}),
+    "reasoning:", String(m?.reasoning_content || "").length, "calls:", m?.tool_calls?.length || 0);
   if (!m || typeof m !== "object") return fail("bad_response");
   const tool_calls = vetCalls(m.tool_calls);
-  const content = typeof m.content === "string" ? m.content.slice(0, 4000) : "";
+  const content = typeof m.content === "string" ? m.content.trim().slice(0, 4000) : "";
   if (!tool_calls && !content.trim()) return fail("bad_response");
-  return reply({ ok: true, sess, message: { role: "assistant", content, tool_calls } }, 200, origin);
+  return reply({ ok: true, sess, ms, message: { role: "assistant", content, tool_calls } }, 200, origin);
 }
 
 export default {

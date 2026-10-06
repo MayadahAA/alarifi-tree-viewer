@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<script>(function(){try{var t=localStorage.getItem("arifiTheme");if(/^(light|dark)$/.test(t))document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem("arifiTheme");if(/^(light|dark)$/.test(t))document.documentElement.setAttribute("data-theme",t);else localStorage.removeItem("arifiTheme");}catch(e){}})();</script>
 <title>مستعرض شجرة العرافا</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,7 +57,8 @@ body{margin:0; background:var(--paper); color:var(--ink); direction:rtl; overflo
   transition:background .15s, color .15s}
 .credit:hover{background:var(--gold); color:var(--paper)}
 @media(max-width:820px){ .credit{font-size:12px; padding:6px 10px} }
-.searchwrap{position:relative; flex:1 1 300px; min-width:180px}
+.searchwrap{display:flex; align-items:center; gap:6px; flex:1 1 300px; min-width:180px}
+.searchfield{position:relative; flex:1 1 auto; min-width:0}
 input[type=search]{width:100%; padding:9px 13px; font:inherit; color:var(--ink);
   background:var(--sunk); border:1px solid var(--line2); border-radius:8px}
 .searchwrap.hasHits input[type=search]{padding-inline-end:104px}
@@ -76,6 +77,9 @@ button{font:inherit; color:var(--ink); cursor:pointer}
 .ico{background:var(--surface); border:1px solid var(--line2); border-radius:8px; width:36px; height:36px;
   font-size:17px; line-height:1; display:inline-flex; align-items:center; justify-content:center}
 .ico:hover{border-color:var(--gold)}
+.assistant-trigger{width:auto; min-width:76px; height:38px; flex:0 0 auto; gap:5px; padding-inline:10px; font-size:13px; white-space:nowrap}
+.assistant-trigger .spark{font-size:16px; line-height:1}
+.theme-icons button{display:inline-flex; align-items:center; justify-content:center; min-width:40px; padding:7px 9px; font-size:17px}
 
 .scrim{position:fixed; inset:0; background:rgba(20,16,10,.42); z-index:20}
 .drawer{position:fixed; inset-block:0; inset-inline-start:0; width:min(330px,86vw); z-index:21;
@@ -103,11 +107,13 @@ button{font:inherit; color:var(--ink); cursor:pointer}
 .src{margin-top:20px; border-top:1px solid var(--line); padding-top:12px;
   font-size:11.5px; line-height:1.85; color:var(--muted)}
 .src h4{margin:0 0 6px; font-size:11.5px; letter-spacing:.1em; color:var(--gold); font-weight:600}
+.src h4:focus-visible{outline:2px solid var(--gold); outline-offset:3px}
 .src b{color:var(--ink); font-weight:600}
 .src p{margin:8px 0 0}
-.body{flex:1 1 auto; display:flex; min-height:0}
+.body{--details-w:360px; --chat-w:clamp(320px,25vw,360px); flex:1 1 auto; display:grid; min-height:0;
+  grid-template-columns:minmax(0,1fr) var(--details-w); grid-template-areas:"stage details"}
 .searchslot{display:none}
-.stage{flex:1 1 auto; display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--canvasbg)}
+.stage{grid-area:stage; display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--canvasbg); direction:rtl}
 .cwrap{flex:1 1 auto; position:relative; min-height:0}
 canvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab}
 canvas.drag{cursor:grabbing}
@@ -124,8 +130,12 @@ canvas.drag{cursor:grabbing}
 .crumbs button:hover{border-color:var(--gold)}
 .crumbs span{color:var(--muted); font-size:11px}
 
-.side{flex:0 0 360px; border-inline-start:1px solid var(--line); background:var(--surface);
-  overflow:auto; padding:14px}
+.side{grid-area:details; border-inline-start:1px solid var(--line); background:var(--surface);
+  overflow:auto; padding:14px; direction:rtl}
+.chat-panel{grid-area:chat; display:none; min-width:0; min-height:0; background:var(--surface);
+  border-inline-end:1px solid var(--line); flex-direction:column; direction:rtl}
+.body.chat-open{grid-template-columns:var(--chat-w) minmax(480px,1fr) var(--details-w); grid-template-areas:"chat stage details"}
+.body.chat-open .chat-panel{display:flex}
 @media(max-width:820px){
   body{overflow:auto}
   .app{height:auto; min-height:100%}
@@ -142,8 +152,19 @@ canvas.drag{cursor:grabbing}
   .searchslot .searchwrap{flex:none; width:100%; order:0}
   .seg button{padding:7px 10px; font-size:12px}
   .ico{width:34px; height:34px}
+  .assistant-trigger{width:36px; min-width:36px; height:36px; padding:0}
+  .assistant-trigger span:last-child{display:none}
   .pname{font-size:24px}
+  .chat-panel{position:fixed; inset:0; z-index:30; border:0; transform:translateX(100%); transition:transform 180ms ease-out}
+  .body.chat-open .chat-panel{display:flex; transform:translateX(0)}
 }
+@media(min-width:821px) and (max-width:1179px){
+  .body.chat-open{grid-template-columns:minmax(0,1fr) var(--details-w); grid-template-areas:"stage details"}
+  .chat-panel{position:fixed; inset-block:0; inset-inline-end:0; z-index:22; width:min(360px,calc(100vw - 420px));
+    transform:translateX(100%); transition:transform 180ms ease-out}
+  .body.chat-open .chat-panel{display:flex; transform:translateX(0)}
+}
+@media(prefers-reduced-motion:reduce){.chat-panel{transition:none!important}}
 .backbtn[hidden]{display:none}
 .backbtn{display:block; width:100%; text-align:start; font:inherit; cursor:pointer;
   background:var(--sunk); border:1px solid var(--line2); border-radius:9px;
@@ -159,6 +180,12 @@ canvas.drag{cursor:grabbing}
 .badge{font-size:11.5px; border:1px solid var(--line2); border-radius:99px; padding:2px 9px; color:var(--muted);
   display:inline-flex; gap:5px; align-items:center}
 .badge i{width:9px; height:9px; border-radius:50%; display:inline-block}
+.status-provenance{display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;
+  margin:7px 0 12px; font-size:11px; line-height:1.6; color:var(--muted)}
+.status-date{font-size:10.5px; color:var(--muted); font-weight:400; white-space:normal}
+.source-action{display:inline-flex; align-items:center; gap:4px; background:none; border:0; padding:0;
+  color:var(--gold); font:inherit; font-weight:600; border-bottom:1px dotted currentColor; white-space:nowrap}
+.source-action:hover{color:var(--ink)}
 .nasab{font-family:Amiri,serif; font-size:16px; line-height:2; margin-top:12px;
   background:var(--sunk); border:1px solid var(--line); border-radius:9px; padding:10px 12px}
 .nasab button{background:none; border:0; padding:0 1px; font:inherit; color:var(--ink);
@@ -179,6 +206,14 @@ h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; ma
 .facts{margin-top:14px; border-top:1px solid var(--line); padding-top:10px}
 .facts div{font-size:13px; line-height:1.9; color:var(--muted)}
 .facts b{color:var(--ink); font-weight:600}
+.sectionhead{display:flex; align-items:center; gap:7px; margin:16px 0 6px}
+.sectionhead h3{margin:0}
+.sectioncount{display:inline-flex; align-items:center; justify-content:center; min-width:21px; height:21px;
+  padding:0 6px; border-radius:99px; background:var(--gold-soft); color:var(--ink); font-size:11.5px;
+  font-weight:600; font-variant-numeric:tabular-nums}
+.relation-note{margin:10px 0 0; color:var(--muted); font-size:12px; line-height:1.8}
+.facts summary{cursor:pointer; color:var(--muted); font-size:12px; font-weight:600; letter-spacing:.04em}
+.facts[open] summary{margin-bottom:6px}
 .hrow{display:flex; align-items:baseline; gap:8px; width:100%; text-align:start; font:inherit;
   background:none; border:0; padding:8px 6px; border-radius:7px; border-bottom:1px dashed var(--line)}
 .hrow:hover{background:var(--sunk)}
@@ -228,9 +263,11 @@ h3{font-size:12px; letter-spacing:.08em; color:var(--muted); font-weight:600; ma
 .blank{color:var(--muted); font-size:13.5px; padding:18px 4px; text-align:center}
 .hint{font-size:12px; color:var(--muted); margin:10px 0 0; line-height:1.8}
 .hint b{color:var(--ink); font-weight:600}
-.legend{display:flex; gap:8px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:14px;
+.legend{display:flex; gap:8px 12px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:14px;
   border-top:1px solid var(--line); padding-top:10px}
 .legend i{width:10px; height:10px; border-radius:3px; display:inline-block; margin-inline-end:3px; vertical-align:-1px}
+.legend-context{flex:1 0 100%; margin:0; color:var(--ink); font-size:12px}
+.legend>span{display:inline-flex; align-items:baseline; gap:2px 4px; min-width:0}
 .loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   background:var(--canvasbg); color:var(--muted); font-size:14px; z-index:5}
 
@@ -248,12 +285,23 @@ dialog.fb .msg{min-height:1.2em; font-size:13px; margin-top:8px}
 
 dialog.fb .cres{display:flex; flex-direction:column; gap:6px; margin-top:12px}
 .chatbtn{display:block; width:100%; margin:0 0 14px; padding:10px 12px; background:var(--gold-soft); color:var(--ink); border:1px solid var(--gold); border-radius:9px; font-size:14px; text-align:start}
+.chatbtn b,.chatbtn span{display:block}
+.chatbtn b{font-size:14px}
+.chatbtn span{margin-top:3px; color:var(--muted); font-size:12px; line-height:1.7}
 
-dialog.chat{padding:0; display:none; flex-direction:column; height:min(600px,86vh)}
-dialog.chat[open]{display:flex}
-.chhead{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line)}
-.chhead h3{margin:0}
-.chhead button{background:none; border:1px solid var(--line2); border-radius:8px; padding:4px 10px; font-size:13px; margin-inline-start:6px}
+.chhead{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+.chhead h2{margin:0; font-family:Amiri,serif; font-size:22px; line-height:1.2}
+.chhead small{display:block; margin-top:2px; color:var(--muted); font-size:12px}
+.chcontrols{display:flex; align-items:center; gap:6px}
+.chhead button{background:none; border:1px solid var(--line2); border-radius:8px; min-height:36px; padding:5px 10px; color:var(--ink); font:inherit; font-size:13px}
+.chhead button:hover{border-color:var(--gold); color:var(--gold)}
+.chclose{width:36px; padding:0!important; font-size:19px!important}
+.chcontext{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 14px; background:var(--sunk); border-bottom:1px solid var(--line)}
+.chcontext[hidden]{display:none}
+.chcontext span{display:block; color:var(--muted); font-size:12px}
+.chcontext b{display:block; max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:Amiri,serif; font-size:15px}
+.chcontext button{flex:0 0 auto; min-height:34px; background:none; border:1px solid var(--line2); border-radius:8px; padding:5px 9px; color:var(--ink); font:inherit; font-size:12px}
+.chcontext button:hover{border-color:var(--gold); color:var(--gold)}
 .chlog{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px}
 .bub{max-width:88%; padding:9px 12px; border-radius:14px; font-size:14px; line-height:1.7; white-space:pre-wrap}
 .bub.u{align-self:flex-start; background:var(--gold); color:var(--surface); border-end-start-radius:4px}
@@ -261,7 +309,7 @@ dialog.chat[open]{display:flex}
 .bub.a .resrow{display:block; width:100%; margin-top:6px; text-align:start}
 .bub.typing{color:var(--muted)}
 .bub.err .go{margin-top:8px; padding:6px 14px; border-radius:9px; border:1px solid var(--gold); background:var(--gold); color:var(--surface); font:inherit; cursor:pointer}
-.chform{display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--line); align-items:flex-end}
+.chform{display:flex; gap:8px; padding:10px 14px max(10px,env(safe-area-inset-bottom)); border-top:1px solid var(--line); align-items:flex-end}
 .chform textarea{flex:1; min-height:0; height:40px; resize:none}
 .chform .go{padding:9px 16px; border-radius:9px; border:1px solid var(--gold); background:var(--gold); color:var(--surface)}
 .chform .go:disabled{opacity:.5}
@@ -274,8 +322,11 @@ dialog.chat[open]{display:flex}
     <button class="ico" id="menu" type="button" aria-label="القوائم" aria-expanded="false">☰</button>
     <div class="brand">مستعرض شجرة العرافا<small>٤٥٨٨ فردًا في ١٨ جيلًا</small></div>
     <div class="searchwrap">
-      <input type="search" id="q" placeholder="ابحث باسم، أو بنسب: خالد بن محمد بن سعد" autocomplete="off" aria-label="بحث">
-      <span class="hitcount" id="hits"></span>
+      <div class="searchfield">
+        <input type="search" id="q" placeholder="ابحث باسم، أو بنسب: خالد بن محمد بن سعد" autocomplete="off" aria-label="بحث">
+        <span class="hitcount" id="hits"></span>
+      </div>
+      <button class="ico assistant-trigger" id="assistantTrigger" type="button" aria-label="اسأل المساعد" aria-expanded="false" title="اسأل المساعد"><span class="spark" aria-hidden="true">✦</span><span>اسأل</span></button>
     </div>
     <div class="seg" role="group" aria-label="طبقة التلوين">
       <button id="m0" type="button" aria-pressed="false">الرسم الأصلي</button>
@@ -293,21 +344,21 @@ dialog.chat[open]{display:flex}
       <b>وين نلتقي؟</b><span>اختر شخصين واعرف جدّهما المشترك</span></button>
     <div class="dhead" style="margin-top:18px"><span>قوائم</span></div>
     <button class="dlist" id="houses" type="button" aria-pressed="false">البيوت<i id="nHouses"></i></button>
-    <button class="dlist" id="elders" type="button" aria-pressed="false">كبار الأسرة الأحياء<i id="nElders"></i></button>
+    <button class="dlist" id="elders" type="button" aria-pressed="false">كبار الأسرة في اللوحة<i id="nElders"></i></button>
     <button class="dlist" id="rare" type="button" aria-pressed="false">الأسماء النادرة<i id="nRare"></i></button>
     <div class="dhead" style="margin-top:18px"><span>المظهر</span></div>
-    <div class="seg segfull" role="group" aria-label="مظهر الواجهة">
-      <button id="tSystem" type="button" aria-pressed="true">تلقائي</button>
-      <button id="tLight" type="button" aria-pressed="false">فاتح</button>
-      <button id="tDark" type="button" aria-pressed="false">داكن</button>
+    <div class="seg segfull theme-icons" role="group" aria-label="مظهر الواجهة">
+      <button id="tSystem" type="button" aria-pressed="true" aria-label="المظهر التلقائي" title="تلقائي">◐</button>
+      <button id="tLight" type="button" aria-pressed="false" aria-label="المظهر الفاتح" title="فاتح">☀</button>
+      <button id="tDark" type="button" aria-pressed="false" aria-label="المظهر الداكن" title="داكن">☾</button>
     </div>
     <div class="src">
-      <h4>مصدر المعلومات</h4>
-      كل ما في هذا المستعرض مستخرج آليًا من لوحة <b>«شجرة العريفي ١٤٤٥هـ»</b>، ولم تُضف إليه معلومة من خارجها.
-      <p><b>تنفيذ وتحقيق اللوحة:</b> صندوق أسرة العريفي، حُرّرت في ١/١/١٤٤٥هـ الموافق ١٩/٧/٢٠٢٣م.</p>
-      <p><b>ومصادرها كما ذكرتها:</b> شجرات النسب المحققة في ١/١/١٤٣١هـ و٢٨/٣/١٤٠٨هـ و١٣٩١هـ، وكبار السن من الأسرة.</p>
-      <p>الحالات كما في اللوحة يوم حُرّرت، ومضى عليها أكثر من ثلاث سنوات.
-      وأسماء البيوت المُعلَّمة <em style="font-style:normal;color:var(--gold)">مقترحة</em> تحتاج تأكيدكم.</p>
+      <h4 id="sourceDetails" tabindex="-1">تفاصيل المصدر</h4>
+      كل ما في هذا المستعرض مستخرج آليًا من لوحة <b>«شجرة العريفي ١٤٤٥هـ»</b>، ولم تُضف إليه معلومة من خارجها
+      <p><b>تنفيذ وتحقيق اللوحة:</b> صندوق أسرة العريفي، حُرّرت في ١/١/١٤٤٥هـ الموافق ١٩/٧/٢٠٢٣م</p>
+      <p><b>ومصادرها كما ذكرتها:</b> شجرات النسب المحققة في ١/١/١٤٣١هـ و٢٨/٣/١٤٠٨هـ و١٣٩١هـ، وكبار السن من الأسرة</p>
+      <p>الحالات كما في اللوحة يوم حُرّرت، ومضى عليها أكثر من ثلاث سنوات
+      وأسماء البيوت المُعلَّمة <em style="font-style:normal;color:var(--gold)">مقترحة</em> تحتاج تأكيدكم</p>
     </div>
     <p class="dfoot">٤٥٨٨ فردًا في ١٨ جيلًا</p>
   </aside>
@@ -333,6 +384,19 @@ dialog.chat[open]{display:flex}
       <button class="backbtn" id="back" type="button" hidden></button>
       <div id="side"></div>
     </aside>
+    <aside class="chat-panel" id="chatPanel" aria-label="محادثة المساعد" aria-hidden="true">
+      <div class="chhead"><div><h2>اسأل المساعد</h2><small>مربوط بالشجرة المفتوحة</small></div><div class="chcontrols">
+        <button type="button" id="chNew" title="محادثة جديدة">جديدة</button>
+        <button type="button" class="chclose" id="chClose" aria-label="إغلاق">×</button></div></div>
+      <div class="chcontext" id="chContext" hidden><div><span>سياق الشخص المحدد</span><b id="chContextName"></b></div>
+        <button type="button" id="chUseContext">استخدمه في السؤال</button></div>
+      <div class="chlog" id="chLog" aria-live="polite"></div>
+      <div id="chCap"></div>
+      <form class="chform" id="chForm">
+        <textarea id="chText" rows="1" maxlength="300" placeholder="اكتب رسالتك…"></textarea>
+        <button type="submit" class="go" id="chSend">إرسال</button>
+      </form>
+    </aside>
   </div>
 </div>
 
@@ -340,32 +404,24 @@ dialog.chat[open]{display:flex}
 <dialog class="fb" id="fbDlg">
   <h3>اقترح تصحيحًا</h3>
   <p id="fbRef"></p>
-  <p>ملاحظتك مجهولة تمامًا: لا يُحفظ اسمك ولا رقمك ولا أي معلومة عنك.</p>
+  <p>تُرسل الملاحظة بدون اسم أو رقم، ولا يطلب هذا النموذج بيانات تعريفية</p>
   <textarea id="fbText" maxlength="1000" placeholder="وش التصحيح أو الملاحظة؟"></textarea>
   <div id="fbCap" style="margin-top:10px"></div>
   <div class="msg" id="fbMsg" role="status"></div>
   <div class="row"><button type="button" id="fbCancel">إلغاء</button><button type="button" class="go" id="fbSend">إرسال</button></div>
 </dialog>
 
-<dialog class="fb chat" id="chDlg">
-  <div class="chhead"><h3>اسأل عن شخص</h3><span>
-    <button type="button" id="chNew" title="محادثة جديدة">جديدة</button>
-    <button type="button" id="chClose" aria-label="إغلاق">✕</button></span></div>
-  <div class="chlog" id="chLog" aria-live="polite"></div>
-  <div id="chCap"></div>
-  <form class="chform" id="chForm">
-    <textarea id="chText" rows="1" maxlength="300" placeholder="اكتب رسالتك…"></textarea>
-    <button type="submit" class="go" id="chSend">إرسال</button>
-  </form>
-</dialog>
 <script>
 (function(){
 "use strict";
 var WORLD={w:1690,h:2610};
 var IMGW=3287, IMGH=5075;
 var STCOL=["var(--s0)","var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)"];
-var STN=["أعزب حي","متزوج حي","متزوج متوفى له عقب ذكور وإناث","متزوج متوفى له عقب إناث فقط","متزوج متوفى ليس له عقب","أعزب متوفى"];
-var STS=["أعزب حي","متزوج حي","متوفى له عقب","متوفى له إناث","متوفى بلا عقب","أعزب متوفى"];
+var STKEY=["أعزب حي","متزوج حي","متزوج متوفى له عقب ذكور وإناث","متزوج متوفى له عقب إناث فقط","متزوج متوفى ليس له عقب","أعزب متوفى"];
+var STN=["حي، أعزب","حي، متزوج","متوفى، وله أبناء وبنات","متوفى، وله بنات فقط","متوفى، بلا ذرية","متوفى، أعزب"];
+var STS=["حي، أعزب","حي، متزوج","متوفى، وله أبناء وبنات","متوفى، وله بنات فقط","متوفى، بلا ذرية","متوفى، أعزب"];
+var STATUS_PROVENANCE="حسب لوحة ١٤٤٥هـ";
+var STATUS_UNKNOWN="الحالة غير مدوّنة في اللوحة";
 
 var P=[], byRow={}, kids={}, META=null, grid={}, CELL=60, totalNames=0;
 var nameCount={}, tripleCount={}, genStat={}, elders=[];
@@ -790,11 +846,22 @@ function select(p, fly){
   sel=p||null;
   if(p && fly) flyTo(p, Math.max(view.s, 1.3));
   else draw();
-  panel(); crumbs();
+  panel(); crumbs(); chSyncContext();
 }
 
 /* ---------- اللوحة ---------- */
 function esc(s){ return String(s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];}); }
+function hasStatus(p){ return p && Number.isInteger(p.st) && p.st>=0 && p.st<STN.length; }
+function statusText(p, short){ return hasStatus(p) ? (short?STS[p.st]:STN[p.st]) : STATUS_UNKNOWN; }
+function statusColor(p){ return hasStatus(p) ? STCOL[p.st] : "var(--line2)"; }
+function provenanceHTML(){ return '<span class="status-date">'+STATUS_PROVENANCE+'</span>'; }
+function statusHTML(p, short){ return '<span>'+esc(statusText(p,short))+' '+provenanceHTML()+'</span>'; }
+function sourceActionHTML(){ return '<button type="button" class="source-action" data-source-details>ⓘ تفاصيل المصدر</button>'; }
+function statusLegendHTML(){
+  return '<div class="legend"><p class="legend-context">ألوان الحالات '+provenanceHTML()+'</p>'+STN.map(function(n,i){
+    return '<span><i style="background:'+STCOL[i]+'"></i><span>'+esc(n)+'</span></span>';
+  }).join("")+'</div>';
+}
 function ancGen(i){ var a=META&&META.ancestors?META.ancestors[i]:null;
   return (a&&a.gen!=null) ? a.gen : (i<=6?i:7); }
 function fullChain(p){
@@ -823,14 +890,22 @@ function plural(n,one,two,few,many){
 }
 function genWord(n){ return n===1?"جيل":(n===2?"جيلان":"أجيال"); }
 function genPhrase(n){ return n===1?"جيل واحد":(n===2?"جيلين":(n<11?ar(n)+" أجيال":ar(n)+" جيلًا")); }
-function relWord(da,db,na,nb){
-  if(da===0||db===0){ var n=Math.max(da,db);
-    return n===1 ? "أب وابنه" : "جدّ وحفيده بينهما "+genPhrase(n); }
-  if(da===1&&db===1) return "إخوة";
-  if(da===2&&db===2) return "أولاد عم";
-  if(da===db) return "أولاد عم من الدرجة "+ar(da-1);
-  var near = da<db ? na : nb, d=Math.abs(da-db);
-  return "قرابة متباعدة، "+near+" أقرب إلى الجدّ المشترك بـ"+genPhrase(d);
+function ancestorWord(n){ return n===1 ? "أب مباشر" : (n===2 ? "جد مباشر" : "جد بعيد يفصل بينهما "+genPhrase(n)); }
+function descendantWord(n){ return n===1 ? "ابن" : (n===2 ? "حفيد" : "حفيد بعيد يفصل بينهما "+genPhrase(n)); }
+function uncleWord(n){ return n===2 ? "عم مباشر" : "عم "+Array(n-1).join("جد ").trim(); }
+function nephewWord(n){ return Array(n-1).fill("ابن").join(" ")+" أخ"; }
+/* علاقة موجّهة: a_to_b تصف الأول بالنسبة للثاني، عشان المساعد ما يستنتج الاتجاه من فرق الأجيال. */
+function relationWords(da,db){
+  if(da===0&&db===0) return {relation:"نفس الشخص",a_to_b:"هو نفسه",b_to_a:"هو نفسه"};
+  if(da===0) return {relation:"نسب مباشر",a_to_b:ancestorWord(db),b_to_a:descendantWord(db)};
+  if(db===0) return {relation:"نسب مباشر",a_to_b:descendantWord(da),b_to_a:ancestorWord(da)};
+  if(da===1&&db===1) return {relation:"إخوة بحسب الشجرة",a_to_b:"أخ بحسب الشجرة",b_to_a:"أخ بحسب الشجرة"};
+  if(da===1) return {relation:"عمومة",a_to_b:uncleWord(db),b_to_a:nephewWord(db)};
+  if(db===1) return {relation:"عمومة",a_to_b:nephewWord(da),b_to_a:uncleWord(da)};
+  var degree=Math.min(da,db)-1, cousins=degree===1 ? "ابن عم" : "ابن عم من الدرجة "+ar(degree);
+  if(da===db) return {relation:"أبناء عم",a_to_b:cousins,b_to_a:cousins};
+  var gap=genPhrase(Math.abs(da-db));
+  return {relation:"أبناء عم بفارق أجيال",a_to_b:cousins+" وبينهما فرق "+gap,b_to_a:cousins+" وبينهما فرق "+gap};
 }
 function chainOf(p){
   var out=[], cur=p, g=0;
@@ -845,7 +920,7 @@ function chainOf(p){
 }
 function meetHTML(){
   var h='<h3>وين نلتقي؟</h3>'+
-    '<p class="hint">اختر شخصين من الشجرة أو بالبحث لتعرف عند أي جدّ يلتقيان، وكم جيلًا بينهما وبينه.</p>'+
+    '<p class="hint">اختر شخصين من الشجرة أو بالبحث لتعرف عند أي جدّ يلتقيان، وكم جيلًا بينهما وبينه</p>'+
     '<div class="slots">';
   [0,1].forEach(function(i){
     var p=meet[i], col=i?"var(--pb)":"var(--pa)";
@@ -857,10 +932,10 @@ function meetHTML(){
   });
   h+='</div>';
   if(meet[0]&&meet[1]){
-    if(meet[0]===meet[1]) h+='<p class="blank">هذا نفس الشخص، اختر ثانيًا.</p>';
+    if(meet[0]===meet[1]) h+='<p class="blank">هذا نفس الشخص، اختر ثانيًا</p>';
     else{
       var m=meetPoint(meet[0],meet[1]);
-      if(!m) h+='<p class="blank">ما وصلنا لجدّ مشترك بينهما في اللوحة.</p>';
+      if(!m) h+='<p class="blank">ما وصلنا لجدّ مشترك بينهما في اللوحة</p>';
       else{
         var da=meet[0].gen-m.node.gen, db=meet[1].gen-m.node.gen;
         var nas=m.A.slice(m.ai+1).map(function(n){ return n.name; }).join(" بن ");
@@ -872,7 +947,7 @@ function meetHTML(){
              '<div style="border-color:var(--pa)"><b>'+ar(da)+'</b>'+genWord(da)+' من '+esc(meet[0].name)+'</div>'+
              '<div style="border-color:var(--pb)"><b>'+ar(db)+'</b>'+genWord(db)+' من '+esc(meet[1].name)+'</div>'+
            '</div></div>'+
-           '<p class="hint">المساران مرسومان على الشجرة باللونين.</p>';
+           '<p class="hint">المساران مرسومان على الشجرة باللونين</p>';
       }
     }
   }
@@ -880,10 +955,10 @@ function meetHTML(){
   return h;
 }
 function housesHTML(){
-  if(!houses.length) return '<p class="blank">ما قدرنا نحمّل قائمة البيوت، حدّث الصفحة.</p>';
+  if(!houses.length) return '<p class="blank">ما قدرنا نحمّل قائمة البيوت، حدّث الصفحة</p>';
   var h='<h3>'+plural(houses.length,'بيت واحد','بيتان','بيوت','بيتًا')+'</h3>'+
-    '<div class="note">ما عليه لقب أحمر في اللوحة مؤكّد، وما هو <em style="font-style:normal;color:var(--gold)">مقترح</em> استُنتج آليًا ويحتاج تأكيدكم. '+
-    'ومن ذريته أربعة فأقل مستبعد.</div>';
+    '<div class="note">ما عليه لقب أحمر في اللوحة مؤكّد، وما هو <em style="font-style:normal;color:var(--gold)">مقترح</em> استُنتج آليًا ويحتاج تأكيدكم، '+
+    'ومن ذريته أربعة فأقل مستبعد</div>';
   if(houseSel){
     var m=houseSel;
     h+='<div class="meetres"><span style="font-size:11.5px;color:var(--gold);font-weight:600">البيت المختار</span>'+
@@ -894,7 +969,7 @@ function housesHTML(){
          '<div><b>'+ar(m.gen)+'</b>جيل جدّه</div>'+
          '<div><b>'+esc(m.branch)+'</b>الفرع</div>'+
        '</div>'+
-       '<p class="hint">أفراده مُعلَّمون على الشجرة. <button type="button" data-hclear="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">إلغاء التحديد</button></p></div>';
+       '<p class="hint">أفراده مُعلَّمون على الشجرة <button type="button" data-hclear="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">إلغاء التحديد</button></p></div>';
   }
   houses.forEach(function(x){
     h+='<button class="hrow" type="button" data-house="'+x.i+'" aria-pressed="'+(houseSel===x?"true":"false")+'">'+
@@ -906,46 +981,53 @@ function housesHTML(){
   return h;
 }
 function eldersHTML(){
-  var g12=genStat[12]||{n:0,a:0};
+  var g12=genStat[12]||{n:0,a:0,k:0};
   var h='<h3>'+ar(elders.length)+' من كبار الأسرة الأحياء</h3>'+
-    '<div class="note">الحالة من ألوان لوحة <b>١٤٤٥هـ</b>، ومضى عليها أكثر من ثلاث سنوات، فقد يكون بعضهم تُوفّي بعدها. '+
-    'راجعوا أهل الفرع قبل الاعتماد عليها.</div>';
+    '<p class="hint">'+STATUS_PROVENANCE+'</p>';
   var cur=null;
   elders.forEach(function(p){
     if(p.gen!==cur){ cur=p.gen;
-      var st=genStat[cur]||{n:0,a:0};
-      h+='<h3 style="color:var(--gold)">الجيل '+ar(cur)+'، '+ar(st.a)+' '+(st.a===1?'حيّ':'أحياء')+' من '+ar(st.n)+'</h3>';
-      if(st.a===1) h+='<p class="hint" style="margin:0 0 4px">الوحيد الحي في جيله، يستحق التأكد من أهل الفرع.</p>'; }
+      var st=genStat[cur]||{n:0,a:0,k:0};
+      h+='<h3 style="color:var(--gold)">الجيل '+ar(cur)+'، '+ar(st.a)+' '+(st.a===1?'حيّ':'أحياء')+' من '+ar(st.k)+'</h3>';
+      if(st.a===1) h+='<p class="hint" style="margin:0 0 4px">الوحيد الحي في جيله، يستحق التأكد من أهل الفرع</p>'; }
     h+='<button class="elder" type="button" data-row="'+p.row+'">'+
        '<b>'+esc(p.name)+'</b>'+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span>':'')+
        '<span>'+esc(p.short.replace(p.name+" بن ",""))+'</span>'+
        '<span style="margin-inline-start:auto">فرع '+esc(META.l1[p.b1])+'</span></button>';
   });
-  h+='<p class="hint">الجيل ١٢ فيه <b>'+ar(g12.a)+'</b> حيًا من '+ar(g12.n)+'، أكثر من أن يُسرد هنا. '+
-     'والأجيال ٨ و٩ لم يبقَ منها أحد.</p>';
+  h+='<p class="hint">الجيل ١٢ فيه <b>'+ar(g12.a)+'</b> حيًا من '+ar(g12.k)+'، أكثر من أن يُسرد هنا، '+
+     'والأجيال ٨ و٩ لم يبقَ منها أحد</p>';
   return h;
 }
 function factsHTML(p){
   var n=nameCount[p.name]||1, tot=P.length;
-  var one = n===1 ? "لا يحمله أحد غيره في الشجرة" : "واحد من كل "+ar(Math.round(tot/n))+" في الأسرة";
+  var share=n/tot*100;
+  var roundedShare=share<1 ? Math.round(share*100)/100 : Math.round(share);
+  var shareText=ar(String(roundedShare)).replace(".","٫")+"٪";
   var t=(tripleCount[p.tkey]||1)-1;
-  var tline = t===0 ? "متفرّد باسمه الثلاثي" :
-    (t===1 ? "معه شخص واحد بنفس الاسم الثلاثي"
-           : t===2 ? "معه شخصان بنفس الاسم الثلاثي"
-           : "معه "+ar(t)+(t<11?" أشخاص":" شخصًا")+" بنفس الاسم الثلاثي");
-  var st=genStat[p.gen]||{n:1,a:0};
-  return '<div class="facts">'+
-    '<div>اسم <b>'+esc(p.name)+'</b>، '+one+'، '+ar(n)+' من '+ar(tot)+'.</div>'+
-    '<div>'+tline+'.</div>'+
-    '<div>الجيل <b>'+ar(p.gen)+'</b>: '+ar(Math.round(st.a/st.n*100))+'٪ من جيله أحياء ('+ar(st.a)+' من '+ar(st.n)+').</div>'+
-  '</div>';
+  var tline = t===0 ? "ينفرد باسمه الثلاثي" :
+    (t===1 ? "يتكرر اسمه الثلاثي مع شخص واحد"
+           : "يتكرر اسمه الثلاثي مع "+ar(t)+" أشخاص");
+  var st=genStat[p.gen]||{n:1,a:0,k:0};
+  var ordinalGenerations=["الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر","الحادي عشر","الثاني عشر","الثالث عشر","الرابع عشر","الخامس عشر","السادس عشر","السابع عشر","الثامن عشر"];
+  var groupedGenerations=Array.isArray(st.gens)&&st.gens.length>1;
+  var generationScope=groupedGenerations ? "هذه الأجيال" :
+    (Number.isInteger(p.gen) ? "الجيل "+(ordinalGenerations[p.gen-1]||ar(p.gen)) : "هذا الجيل");
+  var statusFact=st.k
+    ? 'سُجّل '+ar(Math.round(st.a/st.k*100))+'٪ من أفراد '+generationScope+' أحياء'
+    : 'حالات '+generationScope+' غير مدوّنة في اللوحة';
+  return '<details class="facts"><summary>إحصاءات الاسم والجيل</summary>'+
+    '<div>يحمل اسم <b>'+esc(p.name)+'</b> '+ar(n)+' من المسجلين في اللوحة ('+shareText+')</div>'+
+    '<div>'+tline+'</div>'+
+    '<div>'+esc(statusFact)+'</div>'+
+  '</details>';
 }
 function rareHTML(){
   var groups=[[1,"يتكرر مرة واحدة"],[2,"يتكرر مرتين"],[3,"يتكرر ثلاث مرات"]];
   var covered=rareList.reduce(function(a,r){ return a+r.n; },0);
   var h='<h3>'+ar(rareList.length)+' اسمًا نادرًا من '+ar(totalNames)+'</h3>'+
     '<p class="hint">أسماء يحملها ثلاثة أفراد أو أقل، مجموعهم <b>'+ar(covered)+'</b> فردًا، '+
-    ar(Math.round(covered/P.length*100))+'٪ من الشجرة. اضغط أي اسم لتحديد حامليه على الرسم.</p>';
+    ar(Math.round(covered/P.length*100))+'٪ من الشجرة، اضغط أي اسم لتحديد حامليه على الرسم</p>';
   groups.forEach(function(g){
     var list=rareList.filter(function(r){ return r.n===g[0]; });
     if(!list.length) return;
@@ -967,11 +1049,13 @@ function fbOpen(p){
   document.getElementById("fbDlg").showModal();
   fbCaptcha();
 }
-function tsLoad(fn){
+function tsLoad(fn, fail){
   if(window.turnstile){ fn(); return; }
   var sc=document.createElement("script");
   sc.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-  sc.onload=fn; document.head.appendChild(sc);
+  sc.onload=fn;
+  sc.onerror=function(){ if(fail) fail(); };
+  document.head.appendChild(sc);
 }
 function fbCaptcha(){
   tsLoad(function(){
@@ -982,16 +1066,16 @@ function fbCaptcha(){
 document.getElementById("fbCancel").addEventListener("click",function(){ document.getElementById("fbDlg").close(); });
 document.getElementById("fbSend").addEventListener("click",function(){
   var btn=this, msg=document.getElementById("fbMsg"), text=document.getElementById("fbText").value.trim();
-  if(text.length<3){ msg.textContent="اكتب الملاحظة أول."; return; }
-  if(!fbTok){ msg.textContent="انتظر التحقق ثواني."; return; }
+  if(text.length<3){ msg.textContent="اكتب الملاحظة أول"; return; }
+  if(!fbTok){ msg.textContent="انتظر التحقق ثواني"; return; }
   btn.disabled=true; msg.textContent="…جاري الإرسال";
   fetch(FB_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},
     body:JSON.stringify({text:text,ref:fbRef,token:fbTok}),credentials:"omit",referrerPolicy:"no-referrer"})
     .then(function(r){ return r.json(); })
     .then(function(j){
-      if(j.ok){ msg.textContent="وصلت، يعطيك العافية."; setTimeout(function(){ document.getElementById("fbDlg").close(); },1200); }
-      else{ msg.textContent="ما انرسلت، جرّب مرة ثانية."; btn.disabled=false; window.turnstile.reset(fbWidget); fbTok=""; }
-    }).catch(function(){ msg.textContent="تعذّر الاتصال."; btn.disabled=false; });
+      if(j.ok){ msg.textContent="وصلت، يعطيك العافية"; setTimeout(function(){ document.getElementById("fbDlg").close(); },1200); }
+      else{ msg.textContent="ما انرسلت، جرّب مرة ثانية"; btn.disabled=false; window.turnstile.reset(fbWidget); fbTok=""; }
+    }).catch(function(){ msg.textContent="تعذّر الاتصال"; btn.disabled=false; });
 });
 
 /* مساعد المحادثة: GLM ما يشوف الشجرة. يطلب أدوات، وهنا تنفّذ على البيانات وترجع له النتيجة. */
@@ -1022,7 +1106,29 @@ function chFromLine(p, nm, fa){   /* لغير الفروع الفرعية: هل 
   }
   return false;
 }
+/* اسم الجد رقم k فوق p (1 = الأب). يكمل في META.ancestors لما تخلص الأشخاص،
+   لأن مؤسسي الفروع (مثل صقر بن ناصر بن جماز) آباؤهم مرسومين كأجداد مو كأشخاص */
+function chUpName(p, k){
+  var cur=p, i=-1;
+  while(k-->0){
+    if(cur){ if(cur.fa && byRow[cur.fa]){ cur=byRow[cur.fa]; continue; } i=cur.ancParent; cur=null; }
+    else i=META.ancestors[i].parent;
+    if(!cur && !(i>=0)) return "";
+  }
+  return cur ? cur.name : META.ancestors[i].name;
+}
+/* «صقر ناصر عبدالله» أو «صقر بن ناصر بن عبدالله» أو «صقر بن ناصر العبدالله» → [صقر، ناصر، عبدالله].
+   يحذف «بن/ابن»، ويلصق «عبد» بالاسم اللي بعده (عبد الله = عبدالله). */
+function chNasab(str){
+  var t=norm(str).replace(/[،,.\-_]/g," ").split(" ").filter(function(w){ return w && w!=="بن" && w!=="ابن" && w!=="بنت"; }), out=[];
+  for(var i=0;i<t.length;i++){
+    if(t[i]==="عبد" && t[i+1]){ out.push("عبد"+t[i+1]); i++; }
+    else out.push(t[i]);
+  }
+  return out;
+}
 function chMatch(f){
+  var chain=f.nasab?chNasab(f.nasab):[];
   var nm=f.first_name?norm(f.first_name):"", fa=f.father_name?norm(f.father_name):"", gf=f.grandfather_name?norm(f.grandfather_name):"";
   var ln=f.lineage_name?norm(f.lineage_name):"", lf=f.lineage_father?norm(f.lineage_father):"";
   var alMain=(ln && !lf && AL_MAIN.hasOwnProperty(ln)) ? AL_MAIN[ln] : -1;
@@ -1030,15 +1136,15 @@ function chMatch(f){
   var dsc=typeof f.descendant_of==="number"?f.descendant_of:-1;
   return P.filter(function(p){
     if(nm && norm(p.name).indexOf(nm)!==0) return false;
-    var pa=p.fa?byRow[p.fa]:null, ga=pa&&pa.fa?byRow[pa.fa]:null;
-    if(fa && !(pa && norm(pa.name)===fa)) return false;
-    if(gf && !(ga && norm(ga.name)===gf)) return false;
+    for(var k=0;k<chain.length;k++) if(norm(k?chUpName(p,k):p.name)!==chain[k]) return false;
+    if(fa && norm(chUpName(p,1))!==fa) return false;
+    if(gf && norm(chUpName(p,2))!==gf) return false;
     if(f.main_branch && META.l1[p.b1]!==f.main_branch) return false;
     if(alMain>=0 && p.b1!==alMain) return false;
     if(ln && alMain<0 && (subs.length ? subs.indexOf(p.b2)<0 : !chFromLine(p, ln, lf))) return false;
     if(dsc>=0 && !chUnder(p, dsc)) return false;
-    if(typeof f.alive==="boolean" && (p.st===0||p.st===1)!==f.alive) return false;
-    if(typeof f.married==="boolean" && (p.st>=1&&p.st<=4)!==f.married) return false;
+    if(typeof f.alive==="boolean" && (!hasStatus(p) || (p.st===0||p.st===1)!==f.alive)) return false;
+    if(typeof f.married==="boolean" && (!hasStatus(p) || (p.st>=1&&p.st<=4)!==f.married)) return false;
     if(typeof f.children_count==="number"){ if((kids[p.row]||[]).length!==f.children_count) return false; }
     else if(typeof f.has_children==="boolean" && chHasKids(p)!==f.has_children) return false;
     return true;
@@ -1046,11 +1152,21 @@ function chMatch(f){
 }
 
 /* ---- الأدوات: كل رقم يرجع لـ GLM محسوب هنا من البيانات ---- */
-function chInfo(p){ return {row:p.row, name:p.name, laqab:p.laqab||undefined, nasab:p.short, gen:p.gen, status:STN[p.st], sons:(kids[p.row]||[]).length}; }
+/* لو الشخص مؤسس فرع فرعي (مثل صقر بن ناصر بن جماز = آل صقر) نقول للموديل، عشان ما يخلطه بحفيد بنفس الاسم */
+function chFounder(p){ var i=META.l2head.indexOf(p.row); return i<0?undefined:"آل "+META.l2[i]+" ("+META.l2[i]+" بن "+META.l1[META.l2parent[i]]+")"; }
+function chInfo(p){ return {row:p.row, name:p.name, laqab:p.laqab||undefined, nasab:p.short, gen:p.gen, status:STN[p.st], sons:(kids[p.row]||[]).length, founder_of:chFounder(p)}; }
 var CH_TOOLS={
   find_people:function(f, seen){
     if(typeof f.descendant_of==="number" && !byRow[f.descendant_of]) return {error:"descendant_of: ما فيه شخص بهذا الرقم"};
     var out=chMatch(f), r={total:out.length, people:out.slice(0,10).map(chInfo)};
+    /* ما فيه تطابق للنسب كامل؟ نقصّ من آخره لين نلقى، ونقول للموديل وش اللي ما تطابق */
+    var ch=f.nasab?chNasab(f.nasab):[];
+    if(!out.length && ch.length>1){
+      for(var n=ch.length-1;n>=1 && !out.length;n--) out=chMatch(Object.assign({},f,{nasab:ch.slice(0,n).join(" ")}));
+      if(out.length){ r={total:0, partial_total:out.length, people:out.slice(0,10).map(chInfo),
+        note:"ما فيه أحد نسبه «"+ch.join(" بن ")+"». هذول يطابقون «"+ch.slice(0,n+1).join(" بن ")+"» بس، و«"+ch[n+1]+"» ما طابق"}; }
+    }
+    if(typeof f.descendant_of==="number") r.within="ذرية "+byRow[f.descendant_of].short+"، بدونه هو";
     if(f.lineage_name && !f.lineage_father && !AL_MAIN.hasOwnProperty(norm(f.lineage_name))){
       var ss=chSubs(norm(f.lineage_name),"");
       if(ss.length>1) r.note="«آل "+f.lineage_name+"» يطابق أكثر من فرع: "+ss.map(function(i){ return META.l2[i]+" بن "+META.l1[META.l2parent[i]]; }).join("، ");
@@ -1062,7 +1178,7 @@ var CH_TOOLS={
     var p=byRow[a.row]; if(!p) return {error:"ما فيه شخص بهذا الرقم"};
     seen.push(p);
     var ch=kids[p.row]||[], pa=p.fa?byRow[p.fa]:null;
-    return {row:p.row, name:p.name, laqab:p.laqab||undefined, gen:p.gen, status:STN[p.st],
+    return {row:p.row, name:p.name, laqab:p.laqab||undefined, gen:p.gen, status:STN[p.st], founder_of:chFounder(p),
       full_nasab:fullChain(p).map(function(n){ return n.name; }).join(" بن "),
       main_branch:META.l1[p.b1], sub_branch:META.l2[p.b2]+" بن "+META.l1[META.l2parent[p.b2]],
       father_row:pa?pa.row:undefined,
@@ -1087,8 +1203,9 @@ var CH_TOOLS={
     seen.push(x); seen.push(y);
     var m=meetPoint(x,y); if(!m) return {error:"ما وصلنا لجد مشترك في اللوحة"};
     var da=x.gen-m.node.gen, db=y.gen-m.node.gen;
+    var r=relationWords(da,db);
     return {common_ancestor:m.A.slice(m.ai).map(function(n){ return n.name; }).slice(0,4).join(" بن "),
-      generations_from_a:da, generations_from_b:db, relation:relWord(da,db,x.name,y.name)};
+      generations_from_a:da, generations_from_b:db, relation:r.relation, a_to_b:r.a_to_b, b_to_a:r.b_to_a};
   }
 };
 
@@ -1100,15 +1217,16 @@ function chCards(bub, list){
   list.forEach(function(p){
     var b=document.createElement("button"); b.type="button"; b.className="resrow";
     b.innerHTML='<b>'+esc(p.name)+'</b> '+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
-      '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، '+STS[p.st]+'</span>';
-    b.addEventListener("click",function(){ document.getElementById("chDlg").close(); select(p,true); revealPanel(); });
+      '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، '+statusHTML(p,true)+'</span>';
+    b.addEventListener("click",function(){ select(p,true); revealPanel(); chSyncContext(); });
     bub.appendChild(b);
   });
   document.getElementById("chLog").scrollTop=1e9;
 }
 /* الجلسة: "وقت_الانتهاء.توقيع". نعتبرها منتهية قبل وقتها بدقيقة عشان ما تنتهي وسط الطلب */
 function chSessOk(){ return !!chSess && Number(chSess.split(".")[0])-60000>Date.now(); }
-function chTokSet(t){ chTok=t; var w=chWait; chWait=[]; w.forEach(function(f){ f(t); }); }
+/* يوصّل الـ token (أو سبب الفشل) لكل طلب ينتظره */
+function chTokSet(t, err){ chTok=t; var w=chWait; chWait=[]; w.forEach(function(f){ f(t, err); }); }
 function chWidgetMount(){
   if(chSessOk() || chWidget!==null) return;
   tsLoad(function(){
@@ -1117,7 +1235,7 @@ function chWidgetMount(){
       callback:chTokSet,
       "expired-callback":function(){ chTok=""; window.turnstile.reset(chWidget); },
       "error-callback":function(){ chTokSet(""); }});
-  });
+  },function(){ chTokSet("","ts_load"); });
 }
 function chCapReset(){   /* token مستخدم أو مرفوض: نطلب واحد جديد فورًا */
   chTok="";
@@ -1131,7 +1249,7 @@ function chToken(){
   chWidgetMount();
   return new Promise(function(ok, no){
     var t=setTimeout(function(){ no("captcha"); },20000);
-    chWait.push(function(v){ clearTimeout(t); v?ok(v):no("captcha"); });
+    chWait.push(function(v, err){ clearTimeout(t); v?ok(v):no(err||"captcha"); });
   });
 }
 (function(){
@@ -1142,18 +1260,42 @@ function chToken(){
 var CH_HELLO="هلا! اسألني عن أي أحد في الشجرة، مثل:\n«أحمد بن محمد من آل سعد»\n«كم متزوج من ذرية سعود بن صقر؟»\n«وش القرابة بين فلان وفلان؟»";
 /* رسالة لكل نوع فشل. bad = الطلب نفسه مرفوض (خلل في التاريخ)، فالحل محادثة جديدة. */
 var CH_ERR={
-  captcha:"ما اكتمل التحقق. أكمله ثم اضغط «أعد الإرسال».",
-  llm:"المساعد ما ردّ هالمرة، جرّب مرة ثانية.",
-  network:"تعذّر الاتصال، تأكد من الإنترنت وجرّب مرة ثانية.",
-  bad_response:"وصل رد غير مفهوم، جرّب مرة ثانية.",
-  bad:"صار خلل في المحادثة. ابدأ محادثة جديدة من «جديدة»."
+  captcha:"ما اكتمل التحقق. أكمله ثم اضغط «أعد الإرسال»",
+  llm:"المساعد ما ردّ هالمرة، جرّب مرة ثانية",
+  network:"تعذّر الاتصال، تأكد من الإنترنت وجرّب مرة ثانية",
+  bad_response:"وصل رد غير مفهوم، جرّب مرة ثانية",
+  bad:"صار خلل في المحادثة. ابدأ محادثة جديدة من «جديدة»",
+  ts_load:"تعذّر تحميل التحقق. افتح الموقع المنشور مباشرة، ثم جرّب مرة ثانية"
 };
 function chOpen(){
-  document.getElementById("chDlg").showModal();
+  var body=document.querySelector(".body"), panel=document.getElementById("chatPanel");
+  body.classList.add("chat-open"); panel.setAttribute("aria-hidden","false");
+  document.getElementById("assistantTrigger").setAttribute("aria-expanded","true");
+  chSyncContext();
+  requestAnimationFrame(resize);
   if(!document.getElementById("chLog").children.length) chBub("a",CH_HELLO);
   chWidgetMount();
   document.getElementById("chText").focus();
 }
+function chClose(){
+  document.querySelector(".body").classList.remove("chat-open");
+  document.getElementById("chatPanel").setAttribute("aria-hidden","true");
+  document.getElementById("assistantTrigger").setAttribute("aria-expanded","false");
+  requestAnimationFrame(resize);
+}
+function chSyncContext(){
+  var box=document.getElementById("chContext"), name=document.getElementById("chContextName");
+  if(!sel){ box.hidden=true; name.textContent=""; return; }
+  name.textContent=sel.short||sel.name;
+  box.hidden=false;
+}
+function chUseContext(){
+  if(!sel) return;
+  var ta=document.getElementById("chText"), nasab=fullChain(sel).slice(0,4).map(function(n){ return n.name; }).join(" بن ");
+  ta.value=(ta.value.trim()?ta.value.trim()+" ":"")+"عن "+nasab;
+  ta.focus();
+}
+document.getElementById("assistantTrigger").addEventListener("click",chOpen);
 /* يحذف أقدم دور كامل (user وكل اللي بعده لين user التالي) لين المجموع يدخل في الحد.
    الدور الحالي ما ينقص، فالـ tool_calls ونتائجها تبقى مع بعض دائمًا. */
 function chTrim(cur){
@@ -1187,7 +1329,7 @@ function chSend(){
   ta.value="";
   var ubub=chBub("u",text), typing=chBub("a typing",chSessOk()||chTok?"أفكّر…":"أتحقق أول…");
   /* الدور الحالي يتجمع هنا، وما يدخل chMsgs إلا لما يكتمل */
-  var turn=[{role:"user",content:text}], steps=0, seen=[];
+  var turn=[{role:"user",content:text}], steps=0, seen=[], t0=performance.now();
   var live=function(){ return gen===chGen; };
   function done(){ if(!live()) return; chBusy=false; chCtl=null; btn.disabled=false; ta.focus(); }
   function fail(err){
@@ -1203,13 +1345,18 @@ function chSend(){
     done();
   }
   function step(){
+    var ts=performance.now();
     chToken().then(function(tok){
       if(!live()) return;
+      var tp=performance.now();
       if(tok) chTok="";   /* الـ token ينفع مرة وحدة، حتى لو انلغى الطلب */
       return chPost(turn, tok, ctl.signal).then(function(j){
         /* الجلسة عامة مو خاصة بالمحادثة، فنحفظها حتى لو الطلب صار قديم */
         if(j.sess){ chSess=j.sess; if(chWidget!==null){ window.turnstile.remove(chWidget); chWidget=null; } }
         if(!live()) return;
+        /* قياس كل جولة: التحقق، الطلب كامل، وكم منه داخل GLM (الباقي شبكة + Worker) */
+        console.info("[chat] جولة "+(steps+1)+": تحقق "+Math.round(tp-ts)+"ms، طلب "+Math.round(performance.now()-tp)+"ms"+(j.ms?" (GLM "+j.ms+"ms)":"")+
+          (j.message&&j.message.tool_calls?"، أدوات: "+j.message.tool_calls.map(function(c){ return c.function.name; }).join("، "):""));
         if(!j.ok){
           if(j.err==="captcha") chSess="";
           else if(tok && !j.sess) chCapReset();
@@ -1224,11 +1371,15 @@ function chSend(){
           step(); return;
         }
         typing.remove();
-        var txt=m.content||"ما قدرت أجاوب، جرّب تصيغ السؤال بشكل ثاني.";
+        var txt=(m.content||"").trim()||"ما قدرت أجاوب، جرّب تصيغ السؤال بشكل ثاني";
         turn.push({role:"assistant",content:txt});
         chMsgs=chMsgs.concat(turn);
-        var uniq=[]; seen.forEach(function(p){ if(uniq.indexOf(p)<0) uniq.push(p); });
+        /* بطاقات بس للي الرد ذكرهم بالاسم واسم الأب، مو كل من مرّ على الأدوات */
+        var nt=norm(txt), uniq=[];
+        seen.forEach(function(p){ var fn=chUpName(p,1);
+          if(uniq.indexOf(p)<0 && nt.indexOf(norm(p.name+(fn?" بن "+fn:"")))>=0) uniq.push(p); });
         chCards(chBub("a",txt), uniq.slice(0,5));
+        console.info("[chat] المجموع "+Math.round(performance.now()-t0)+"ms في "+(steps+1)+" جولات");
         done();
       });
     }).catch(function(e){
@@ -1242,11 +1393,44 @@ function chSend(){
 document.getElementById("chForm").addEventListener("submit",function(e){ e.preventDefault(); chSend(); });
 document.getElementById("chText").addEventListener("keydown",function(e){
   if(e.key==="Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); chSend(); } });
-document.getElementById("chClose").addEventListener("click",function(){ document.getElementById("chDlg").close(); });
+document.getElementById("chClose").addEventListener("click",chClose);
+document.getElementById("chUseContext").addEventListener("click",chUseContext);
 document.getElementById("chNew").addEventListener("click",function(){
   chGen++; if(chCtl) chCtl.abort(); chCtl=null;
   chMsgs=[]; chBusy=false; document.getElementById("chSend").disabled=false;
-  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة. وش تبي تعرف؟"); });
+  document.getElementById("chLog").innerHTML=""; chBub("a","محادثة جديدة. وش تبي تعرف؟"); chSyncContext(); });
+function sectionTitle(label, count){
+  return '<div class="sectionhead"><h3>'+label+'</h3><span class="sectioncount">'+ar(count)+'</span></div>';
+}
+function relationState(p, children){
+  var daughtersOnly=p.st===3, noDescendants=p.st===4||p.st===5;
+  var incomplete=!!p.rev || ((daughtersOnly||noDescendants)&&children.length>0);
+  return {
+    state:incomplete ? "incomplete" : (children.length ? "exists" : (daughtersOnly ? "daughters" : (noDescendants ? "none" : "unknown"))),
+    documentedChildren:children
+  };
+}
+function peopleList(people, withDescendantHint){
+  return '<div class="kids">'+people.map(function(k){
+    var n=(kids[k.row]||[]).length;
+    return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+statusColor(k)+'"></i>'+
+      '<b>'+esc(k.name)+'</b>'+(k.laqab?'<span class="plq">'+esc(k.laqab)+'</span>':'')+
+      '<u>'+esc(statusText(k,true))+'</u>'+
+      (withDescendantHint&&n?'<small>'+ar(n)+' أبناء</small>':'')+'</button>';
+  }).join('')+'</div>';
+}
+function relationshipsHTML(p){
+  var ch=kids[p.row]||[];
+  var sib=p.fa&&byRow[p.fa] ? (kids[p.fa]||[]).filter(function(x){ return x!==p; }) : [];
+  var relation=relationState(p,ch), html='';
+  if(relation.documentedChildren.length) html+=sectionTitle("الأبناء",ch.length)+peopleList(ch,true);
+  if(relation.state==="incomplete") html+='<p class="relation-note">بيانات الأبناء غير مكتملة في اللوحة</p>';
+  if(sib.length) html+=sectionTitle("الإخوة",sib.length)+peopleList(sib,false);
+  if(relation.state==="none"&&!sib.length) html+='<p class="blank">لا أبناء أو إخوة موثقون في اللوحة</p>';
+  var descendants=ch.length ? descCount(p) : null;
+  if(descendants!==null&&descendants>ch.length) html+=sectionTitle("الذرية",descendants);
+  return html;
+}
 function panel(){
   var el=document.getElementById("side");
   if(panelMode==="meet" && results.length){ renderResults(el); return; }
@@ -1289,8 +1473,7 @@ function panel(){
   }
   if(results.length && !sel){ renderResults(el); return; }
   if(!sel){ el.innerHTML = introHTML(); var cb=el.querySelector("[data-chat]"); if(cb) cb.addEventListener("click",chOpen); return; }
-  var p=sel, ch=kids[p.row]||[];
-  var sib = p.fa ? (kids[p.fa]||[]).filter(function(x){return x!==p;}) : [];
+  var p=sel;
   var ch2=chainOf(p);
   var nas = ch2.slice(1).map(function(n,i){
     return '<span class="sep"> بن </span><button type="button" data-row="'+(n.node?n.node.row:"")+'">'+esc(n.name)+'</button>';
@@ -1299,7 +1482,7 @@ function panel(){
     '<div class="panelhead"><span class="pname">'+esc(p.name)+'</span>'+
       (p.laqab?'<span class="plq">'+esc(p.laqab)+'</span>':'')+'</div>'+
     '<div class="meta">'+
-      '<span class="badge"><i style="background:'+STCOL[p.st]+'"></i>'+STN[p.st]+'</span>'+
+      '<span class="badge"><i style="background:'+statusColor(p)+'"></i>'+esc(statusText(p,false))+'</span>'+
       '<span class="badge">الجيل '+ar(p.gen)+'</span>'+
       '<span class="badge">فرع '+esc(META.l1[p.b1])+'</span>'+
       '<span class="badge">'+esc(META.l2[p.b2])+' بن '+esc(META.l1[META.l2parent[p.b2]])+'</span>'+
@@ -1309,19 +1492,9 @@ function panel(){
     (p.house ? '<div style="margin-top:9px">'+
         p.houses.map(function(h,i){ return '<button class="hbadge" type="button" data-gohouse="'+h.i+'">'+
           (i?'':'من ')+esc(h.name)+'</button>'; }).join(" ")+'</div>' : '')+
+    '<div class="status-provenance"><span>'+STATUS_PROVENANCE+'</span></div>'+
     '<div class="nasab"><b>'+esc(p.name)+'</b>'+nas+'</div>'+
-    '<h3>'+plural(ch.length,'ابن واحد','ابنان','أبناء','ابنًا')+' في اللوحة</h3>'+
-    (ch.length? '<div class="kids">'+ch.map(function(k){
-        var n=(kids[k.row]||[]).length;
-        return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+STCOL[k.st]+'"></i>'+
-               '<b>'+esc(k.name)+'</b>'+(k.laqab?'<span class="plq">'+esc(k.laqab)+'</span>':'')+
-               '<u>'+STS[k.st]+'</u>'+
-               '<small>'+(n?ar(n)+" أبناء":"")+'</small></button>'; }).join("")+'</div>'
-      : '<p class="blank">ما رُسم له أبناء في اللوحة.</p>')+
-    (sib.length? '<h3>'+plural(sib.length,'أخ واحد','أخوان','إخوة','أخًا')+'</h3><div class="kids">'+sib.slice(0,40).map(function(k){
-        return '<button class="kid" type="button" data-row="'+k.row+'"><i style="background:'+STCOL[k.st]+'"></i>'+
-               '<b>'+esc(k.name)+'</b><u>'+STS[k.st]+'</u></button>'; }).join("")+'</div>' : '')+
-    '<p class="hint">ذريته في اللوحة <b>'+ar(descCount(p))+'</b> فردًا.</p>'+ factsHTML(p)+
+    relationshipsHTML(p)+factsHTML(p)+
     '<button type="button" class="fbbtn" data-fb>اقترح تصحيحًا على هذا الشخص</button>';
   el.querySelector("[data-fb]").addEventListener("click",function(){ fbOpen(p); });
   el.querySelectorAll("[data-row]").forEach(function(b){
@@ -1358,32 +1531,30 @@ function descCount(p){
   return n;
 }
 function introHTML(){
-  return '<button type="button" class="chatbtn" data-chat>اسأل عن شخص: صفه بكلامك وأطلعه لك</button>'+
-    '<h3>دوّر على اسمك</h3>'+
-    '<p class="hint">اكتب الاسم مع أبيه وجدّه، مثل: <b>خالد بن محمد بن سعد</b>. '+
-    'الاسم وحده ما يكفي، ففي الشجرة ١٨٣ «خالد».</p>'+
-    '<p class="hint">أو اضغط أي اسم في الرسم فتطلع بطاقته. '+
-    'كبّر بالإصبعين أو بعجلة الفأرة لتبين الأسماء الأصغر.</p>'+
+  return '<h3>دوّر على اسمك</h3>'+
+    '<p class="hint">اكتب الاسم مع اسم الأب والجد، مثل: <b>خالد بن محمد بن سعد</b>، فالاسم الأول وحده لا يكفي، وفي الشجرة ١٨٣ شخصًا باسم خالد</p>'+
+    '<p class="hint">اضغط على أي اسم في الشجرة لعرض بطاقته</p>'+
+    '<p class="hint">قرّب بإصبعين على الجوال، أو استخدم عجلة الفأرة على الكمبيوتر، لرؤية الأسماء الصغيرة</p>'+
     '<h3>الفروع الرئيسية</h3>'+
-    '<p class="hint">اضغط الفرع ليتلوّن في الرسم. '+
-    '<b>محمد</b> ابن سالم، و<b>خلف</b> و<b>سعد</b> و<b>ناصر</b> أبناء <b>جماز</b> أخيه، فهو عمّهم.</p><div class="kids">'+
+    '<p class="hint">اضغط الفرع ليتلوّن في الرسم، '+
+    '<b>محمد</b> ابن سالم، و<b>خلف</b> و<b>سعد</b> و<b>ناصر</b> أبناء <b>جماز</b> أخيه، فهو عمّهم</p><div class="kids">'+
     META.l1.map(function(n,i){
       var head=P.filter(function(p){return p.b1===i;});
       return '<button class="kid" type="button" data-b1="'+i+'"><i style="background:'+
         ["var(--b0)","var(--b1)","var(--b2)","var(--b3)"][i]+'"></i><b>'+esc(n)+'</b>'+
         '<small>'+ar(head.length)+' فردًا</small></button>'; }).join("")+'</div>'+
     '<h3>البيوت</h3>'+
-    '<p class="hint"><b>'+ar(houses.length)+'</b> بيتًا يُعرف كل واحد بجدّه. '+
+    '<p class="hint"><b>'+ar(houses.length)+'</b> بيتًا، يُعرف كل بيت باسم الجد الذي ينتسب إليه '+
     '<button type="button" data-houses-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح قائمة البيوت</button></p>'+
     '<h3>كبار الأسرة</h3>'+
-    '<p class="hint"><b>'+ar(elders.length)+'</b> رجلًا من الجيلين العاشر والحادي عشر كانوا أحياء يوم حُرّرت اللوحة. '+
+    '<p class="hint"><b>'+ar(elders.length)+'</b> رجلًا من الجيلين العاشر والحادي عشر كانوا أحياء عند توثيق اللوحة '+
     '<button type="button" data-elders-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح كبار الأسرة</button></p>'+
     '<h3>الأسماء النادرة</h3>'+
-    '<p class="hint"><b>'+ar(rareList?rareList.length:0)+'</b> اسمًا ما يحمله إلا ثلاثة أفراد أو أقل. '+
+    '<p class="hint"><b>'+ar(rareList?rareList.length:0)+'</b> أسماء، يحمل كل اسم منها ثلاثة أشخاص أو أقل '+
     '<button type="button" data-rare-open="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">افتح الأسماء النادرة</button></p>'+
-    '<div class="legend">'+STN.map(function(n,i){ return '<span><i style="background:'+STCOL[i]+'"></i>'+n+'</span>'; }).join("")+'</div>'+
-    '<p class="hint" style="margin-top:14px">المصدر لوحة <b>شجرة العريفي ١٤٤٥هـ</b> بتنفيذ صندوق أسرة العريفي. '+
-    '<button type="button" data-open-menu="1" style="background:none;border:0;padding:0;color:var(--gold);font:inherit;border-bottom:1px dotted var(--gold)">تفاصيل المصادر</button></p>';
+    statusLegendHTML()+
+    '<p class="hint" style="margin-top:14px">المصدر: لوحة <b>«شجرة العريفي»</b> لعام ١٤٤٥هـ، من تنفيذ صندوق أسرة العريفي '+
+    sourceActionHTML()+'</p>';
 }
 function renderResults(el){
   el.innerHTML='<h3>نتائج البحث ('+ar(results.length)+')</h3><div class="res">'+
@@ -1392,7 +1563,7 @@ function renderResults(el){
         '<b>'+esc(p.name)+'</b> '+(p.laqab?'<span class="plq">'+esc(p.laqab)+'</span> ':'')+
         '<span class="l2">'+esc(p.short)+'، الجيل '+ar(p.gen)+'، فرع '+esc(META.l1[p.b1])+'</span></button>';
     }).join("")+'</div>'+
-    (results.length>300?'<p class="hint">عُرضت أول ٣٠٠، أضف اسم الأب لتضييق البحث.</p>':'');
+    (results.length>300?'<p class="hint">عُرضت أول ٣٠٠، أضف اسم الأب لتضييق البحث</p>':'');
   el.querySelectorAll("[data-row]").forEach(function(b){
     b.addEventListener("click",function(){
       var r=+b.dataset.row, pp=byRow[r]; if(!pp) return;
@@ -1446,11 +1617,11 @@ function boot(rows, meta, hrows){
   var h=rows[0], col={}; h.forEach(function(x,i){ col[x.trim()]=i; });
   for(var i=1;i<rows.length;i++){
     var r=rows[i]; if(r.length<6) continue;
-    var st=STN.indexOf(r[col["الحالة"]]);
+    var st=STKEY.indexOf(r[col["الحالة"]]);
     var p={ row:+r[col["#"]], name:r[col["الاسم"]], laqab:r[col["اللقب"]],
             nasab:r[col["النسب_الكامل"]], gen:+r[col["الجيل"]], fa:+r[col["رقم_صف_الأب"]],
             b1:+r[col["رقم_الفرع_الرئيسي"]], b2:+r[col["رقم_الفرع_الفرعي"]],
-            st:st<0?0:st, rev:r[col["يحتاج_مراجعة"]]==="1",
+            st:st<0?null:st, rev:r[col["يحتاج_مراجعة"]]==="1",
             x:+r[col["إحداثي_س"]], y:+r[col["إحداثي_ص"]], r:+r[col["نصف_القطر"]] };
     p.nk=norm(p.nasab); p.lqn=p.laqab?norm(p.laqab):"";
     p.short=p.nasab.split(" بن ").slice(0,4).join(" بن ");
@@ -1488,8 +1659,8 @@ function boot(rows, meta, hrows){
     var f=p.fa?byRow[p.fa]:null, g=(f&&f.fa)?byRow[f.fa]:null;
     p.tkey=p.name+"|"+(f?f.name:"")+"|"+(g?g.name:"");
     tripleCount[p.tkey]=(tripleCount[p.tkey]||0)+1;
-    var st=genStat[p.gen]=genStat[p.gen]||{n:0,a:0};
-    st.n++; if(p.st===0||p.st===1) st.a++;
+    var st=genStat[p.gen]=genStat[p.gen]||{n:0,a:0,k:0};
+    st.n++; if(hasStatus(p)){ st.k++; if(p.st===0||p.st===1) st.a++; }
   });
   elders=P.filter(function(p){ return (p.st===0||p.st===1) && p.gen<=11; })
           .sort(function(a,b){ return a.gen-b.gen || a.name.localeCompare(b.name,"ar"); });
@@ -1520,7 +1691,7 @@ function placeSearch(){         /* الجوال: البحث بين الخريط�
 }
 
 function wire(){
-  var pointers=new Map(), lastDist=0, lastMid=null, moved=0, single=null;
+  var pointers=new Map(), lastDist=0, lastMid=null, moved=0, single=null, drawerReturnFocus=null;
   function arr(){ var a=[]; pointers.forEach(function(v){ a.push(v); }); return a; }
   function midOf(){ var a=arr(); return [(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2]; }
   function distOf(){ var a=arr(); return Math.hypot(a[0][0]-a[1][0], a[0][1]-a[1][1]); }
@@ -1588,12 +1759,19 @@ function wire(){
   document.getElementById("credit").onclick=goOwner;
   document.getElementById("zin").onclick=function(){ goTo(zoomAt(vw()/2,vh()/2,view.s*1.6),true); };
   document.getElementById("zout").onclick=function(){ goTo(zoomAt(vw()/2,vh()/2,view.s/1.6),true); };
-  function setDrawer(on){
+  function setDrawer(on, showSource){
+    if(on && !drawerOpen) drawerReturnFocus=document.activeElement;
     drawerOpen=on;
     document.getElementById("drawer").hidden=!on;
     document.getElementById("scrim").hidden=!on;
     document.getElementById("menu").setAttribute("aria-expanded",on?"true":"false");
-    if(on) document.getElementById("dclose").focus();
+    if(on){
+      var target=showSource?document.getElementById("sourceDetails"):document.getElementById("dclose");
+      target.focus();
+      if(showSource) target.scrollIntoView({block:"start"});
+    }else if(drawerReturnFocus && document.contains(drawerReturnFocus)){
+      drawerReturnFocus.focus(); drawerReturnFocus=null;
+    }
   }
   document.getElementById("back").onclick=goBack;
   document.getElementById("menu").onclick=function(){ setDrawer(!drawerOpen); };
@@ -1680,8 +1858,10 @@ function wire(){
   var q=document.getElementById("q"), tm=null;
   q.addEventListener("input",function(){ clearTimeout(tm); tm=setTimeout(function(){ search(q.value); },140); });
   document.addEventListener("keydown",function(e){
-    if(e.target.tagName==="TEXTAREA" || e.target.closest("dialog[open]")) return;   /* الكتابة بالشات/الملاحظات ما تتأثر بالاختصارات */
-    if(e.target.tagName==="INPUT") { if(e.key==="Escape"){ q.value=""; search(""); } return; }
+    var editable=e.target.matches("input, textarea, select, [contenteditable='true']");
+    if(editable) { if(e.target===q && e.key==="Escape"){ q.value=""; search(""); } return; }
+    if(e.key==="Escape" && document.querySelector(".body").classList.contains("chat-open")){ chClose(); return; }
+    if(e.target.closest("dialog[open], .chat-panel")) return;   /* ما تتسرب اختصارات الشجرة من لوحة المحادثة */
     if(e.key==="m"||e.key==="M"){ setDrawer(!drawerOpen); return; }
     if(e.key==="Escape"){ if(drawerOpen){ setDrawer(false); return; } goBack(); }
     if(e.key==="Backspace"){ e.preventDefault(); goBack(); }
@@ -1690,7 +1870,8 @@ function wire(){
     if(e.key==="0") home(true);
   });
   document.getElementById("side").addEventListener("click",function(e){
-    if(e.target.closest("[data-open-menu]")){ document.getElementById("menu").click(); return; }
+    if(e.target.closest("[data-source-details]")){ setDrawer(true,true); return; }
+    if(e.target.closest("[data-open-menu]")){ setDrawer(true,false); return; }
     if(e.target.closest("[data-rare-open]")){ document.getElementById("rare").click(); return; }
     if(e.target.closest("[data-elders-open]")){ document.getElementById("elders").click(); return; }
     if(e.target.closest("[data-houses-open]")){ document.getElementById("houses").click(); return; }
@@ -1715,7 +1896,7 @@ Promise.all([
   fetch("alarifi_houses.csv").then(function(r){return r.text();}).catch(function(){return "";}),
   loadImg("tree.jpg"), loadImg("tint_main.png"), loadImg("tint_sub.png")
 ]).then(function(v){
-  if(!v[0]||!v[1]){ document.getElementById("load").textContent="تعذّر تحميل البيانات."; return; }
+  if(!v[0]||!v[1]){ document.getElementById("load").textContent="تعذّر تحميل البيانات"; return; }
   poster=v[3]; tintImg[1]=v[4]; tintImg[2]=v[5]; tintCache={};
   wire();
   resize();
