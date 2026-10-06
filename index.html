@@ -1074,7 +1074,29 @@ function chFromLine(p, nm, fa){   /* لغير الفروع الفرعية: هل 
   }
   return false;
 }
+/* اسم الجد رقم k فوق p (1 = الأب). يكمل في META.ancestors لما تخلص الأشخاص،
+   لأن مؤسسي الفروع (مثل صقر بن ناصر بن جماز) آباؤهم مرسومين كأجداد مو كأشخاص */
+function chUpName(p, k){
+  var cur=p, i=-1;
+  while(k-->0){
+    if(cur){ if(cur.fa && byRow[cur.fa]){ cur=byRow[cur.fa]; continue; } i=cur.ancParent; cur=null; }
+    else i=META.ancestors[i].parent;
+    if(!cur && !(i>=0)) return "";
+  }
+  return cur ? cur.name : META.ancestors[i].name;
+}
+/* «صقر ناصر عبدالله» أو «صقر بن ناصر بن عبدالله» أو «صقر بن ناصر العبدالله» → [صقر، ناصر، عبدالله].
+   يحذف «بن/ابن»، ويلصق «عبد» بالاسم اللي بعده (عبد الله = عبدالله). */
+function chNasab(str){
+  var t=norm(str).replace(/[،,.\-_]/g," ").split(" ").filter(function(w){ return w && w!=="بن" && w!=="ابن" && w!=="بنت"; }), out=[];
+  for(var i=0;i<t.length;i++){
+    if(t[i]==="عبد" && t[i+1]){ out.push("عبد"+t[i+1]); i++; }
+    else out.push(t[i]);
+  }
+  return out;
+}
 function chMatch(f){
+  var chain=f.nasab?chNasab(f.nasab):[];
   var nm=f.first_name?norm(f.first_name):"", fa=f.father_name?norm(f.father_name):"", gf=f.grandfather_name?norm(f.grandfather_name):"";
   var ln=f.lineage_name?norm(f.lineage_name):"", lf=f.lineage_father?norm(f.lineage_father):"";
   var alMain=(ln && !lf && AL_MAIN.hasOwnProperty(ln)) ? AL_MAIN[ln] : -1;
@@ -1082,9 +1104,9 @@ function chMatch(f){
   var dsc=typeof f.descendant_of==="number"?f.descendant_of:-1;
   return P.filter(function(p){
     if(nm && norm(p.name).indexOf(nm)!==0) return false;
-    var pa=p.fa?byRow[p.fa]:null, ga=pa&&pa.fa?byRow[pa.fa]:null;
-    if(fa && !(pa && norm(pa.name)===fa)) return false;
-    if(gf && !(ga && norm(ga.name)===gf)) return false;
+    for(var k=0;k<chain.length;k++) if(norm(k?chUpName(p,k):p.name)!==chain[k]) return false;
+    if(fa && norm(chUpName(p,1))!==fa) return false;
+    if(gf && norm(chUpName(p,2))!==gf) return false;
     if(f.main_branch && META.l1[p.b1]!==f.main_branch) return false;
     if(alMain>=0 && p.b1!==alMain) return false;
     if(ln && alMain<0 && (subs.length ? subs.indexOf(p.b2)<0 : !chFromLine(p, ln, lf))) return false;
@@ -1098,11 +1120,21 @@ function chMatch(f){
 }
 
 /* ---- الأدوات: كل رقم يرجع لـ GLM محسوب هنا من البيانات ---- */
-function chInfo(p){ return {row:p.row, name:p.name, laqab:p.laqab||undefined, nasab:p.short, gen:p.gen, status:STN[p.st], sons:(kids[p.row]||[]).length}; }
+/* لو الشخص مؤسس فرع فرعي (مثل صقر بن ناصر بن جماز = آل صقر) نقول للموديل، عشان ما يخلطه بحفيد بنفس الاسم */
+function chFounder(p){ var i=META.l2head.indexOf(p.row); return i<0?undefined:"آل "+META.l2[i]+" ("+META.l2[i]+" بن "+META.l1[META.l2parent[i]]+")"; }
+function chInfo(p){ return {row:p.row, name:p.name, laqab:p.laqab||undefined, nasab:p.short, gen:p.gen, status:STN[p.st], sons:(kids[p.row]||[]).length, founder_of:chFounder(p)}; }
 var CH_TOOLS={
   find_people:function(f, seen){
     if(typeof f.descendant_of==="number" && !byRow[f.descendant_of]) return {error:"descendant_of: ما فيه شخص بهذا الرقم"};
     var out=chMatch(f), r={total:out.length, people:out.slice(0,10).map(chInfo)};
+    /* ما فيه تطابق للنسب كامل؟ نقصّ من آخره لين نلقى، ونقول للموديل وش اللي ما تطابق */
+    var ch=f.nasab?chNasab(f.nasab):[];
+    if(!out.length && ch.length>1){
+      for(var n=ch.length-1;n>=1 && !out.length;n--) out=chMatch(Object.assign({},f,{nasab:ch.slice(0,n).join(" ")}));
+      if(out.length){ r={total:0, partial_total:out.length, people:out.slice(0,10).map(chInfo),
+        note:"ما فيه أحد نسبه «"+ch.join(" بن ")+"». هذول يطابقون «"+ch.slice(0,n+1).join(" بن ")+"» بس، و«"+ch[n+1]+"» ما طابق"}; }
+    }
+    if(typeof f.descendant_of==="number") r.within="ذرية "+byRow[f.descendant_of].short+"، بدونه هو";
     if(f.lineage_name && !f.lineage_father && !AL_MAIN.hasOwnProperty(norm(f.lineage_name))){
       var ss=chSubs(norm(f.lineage_name),"");
       if(ss.length>1) r.note="«آل "+f.lineage_name+"» يطابق أكثر من فرع: "+ss.map(function(i){ return META.l2[i]+" بن "+META.l1[META.l2parent[i]]; }).join("، ");
@@ -1114,7 +1146,7 @@ var CH_TOOLS={
     var p=byRow[a.row]; if(!p) return {error:"ما فيه شخص بهذا الرقم"};
     seen.push(p);
     var ch=kids[p.row]||[], pa=p.fa?byRow[p.fa]:null;
-    return {row:p.row, name:p.name, laqab:p.laqab||undefined, gen:p.gen, status:STN[p.st],
+    return {row:p.row, name:p.name, laqab:p.laqab||undefined, gen:p.gen, status:STN[p.st], founder_of:chFounder(p),
       full_nasab:fullChain(p).map(function(n){ return n.name; }).join(" بن "),
       main_branch:META.l1[p.b1], sub_branch:META.l2[p.b2]+" بن "+META.l1[META.l2parent[p.b2]],
       father_row:pa?pa.row:undefined,
@@ -1279,10 +1311,13 @@ function chSend(){
           step(); return;
         }
         typing.remove();
-        var txt=m.content||"ما قدرت أجاوب، جرّب تصيغ السؤال بشكل ثاني.";
+        var txt=(m.content||"").trim()||"ما قدرت أجاوب، جرّب تصيغ السؤال بشكل ثاني";
         turn.push({role:"assistant",content:txt});
         chMsgs=chMsgs.concat(turn);
-        var uniq=[]; seen.forEach(function(p){ if(uniq.indexOf(p)<0) uniq.push(p); });
+        /* بطاقات بس للي الرد ذكرهم بالاسم واسم الأب، مو كل من مرّ على الأدوات */
+        var nt=norm(txt), uniq=[];
+        seen.forEach(function(p){ var fn=chUpName(p,1);
+          if(uniq.indexOf(p)<0 && nt.indexOf(norm(p.name+(fn?" بن "+fn:"")))>=0) uniq.push(p); });
         chCards(chBub("a",txt), uniq.slice(0,5));
         done();
       });

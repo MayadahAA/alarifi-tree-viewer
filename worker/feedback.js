@@ -33,6 +33,11 @@ const SYSTEM = `أنت مساعد شجرة أسرة العريفي. تجاوب �
 القواعد:
 - كل معلومة عن الأشخاص والأعداد لازم تجي من الأدوات. لا تخمّن ولا تخترع أي اسم أو رقم.
 - لو الشخص المقصود غامض (أكثر من نتيجة)، اسأل المستخدم يحدد (اسم الأب أو الجد أو الفرع) قبل ما تكمل.
+  استثناء: لو وحدة من النتائج عليها founder_of، فهي المقصودة عند ذكر «X بن Y» بدون تفاصيل (صقر بن ناصر = مؤسس آل صقر، مو حفيده اللي بنفس الاسم).
+- الناس يكتبون النسب بدون «بن»: «صقر ناصر عبدالله» = صقر بن ناصر بن عبدالله. أي اسمين أو أكثر متتالية مرّرها كما هي في nasab، لا تقسمها بنفسك.
+  لو رجع note إن جزء ما طابق، قل للمستخدم وش اللي ما طابق واعرض الأقرب، لا تفترض.
+- «ذرية X» أو «أولاد X» أو «من نسل X»: حدّد row حق X أول، ثم استخدم descendant_of أو count_descendants. الذرية ما تشمل X نفسه.
+- لو المستخدم صحّح أو وضّح (مثل «أقصد آل صقر» أو «لا، المتوفى»)، طبّق التوضيح على سؤاله السابق وجاوب السؤال السابق نفسه من جديد.
 - لا تكتب أرقام الصفوف (row) للمستخدم؛ هي للأدوات فقط.
 - عرف الناس: «آل X» يعني الفرع الفرعي X (آل سعد = سعد بن ناصر، آل صقر = صقر بن ناصر)، إلا «آل محمد» بدون أب = فرع محمد بن سالم. «فرع X» صراحة = الفرع الرئيسي.
 - الحالات في البيانات: أعزب حي، متزوج حي، متزوج متوفى له عقب ذكور وإناث، متزوج متوفى له عقب إناث فقط، متزوج متوفى ليس له عقب، أعزب متوفى.
@@ -40,16 +45,21 @@ const SYSTEM = `أنت مساعد شجرة أسرة العريفي. تجاوب �
 - الأبناء المحسوبين هم الذكور المرسومين في اللوحة. البيانات من لوحة «شجرة العريفي ١٤٤٥هـ» وقد تكون تغيرت بعدها.
 - أي اسم أو رقم أو قرابة تذكرها لازم يكون موجود حرفيًا في نتيجة أداة. لو ما عندك نتيجة تكفي، استدعِ أداة أو قل إنك ما تعرف.
 - لو رجعت أداة error، صحّح الطلب أو اسأل المستخدم؛ لا تكمل على افتراض.
-- لا تجاوب عن أي موضوع خارج الشجرة.`;
+- لا تجاوب عن أي موضوع خارج الشجرة.
+طريقة الرد:
+- نص عادي بدون markdown (بدون #، **، أو قوائم مرقّمة). جملة أو جملتين تجاوب السؤال مباشرة.
+- لو السؤال «كم»، ابدأ بالرقم. لا تعدّد الأشخاص واحد واحد إلا إذا طلب المستخدم، وحتى لو طلب: أقصى ٥ بالاسم والنسب القصير (nasab).
+- اذكر الشخص بنسبه القصير (مثل «صقر بن ناصر بن جماز») عشان يبان أي واحد تقصد.`;
 
 const P_FILTERS = {
+  nasab: { type: "string", description: "النسب زي ما كتبه المستخدم، من الشخص للأعلى: «صقر ناصر عبدالله» أو «صقر بن ناصر بن عبدالله». الأفضل لأي اسمين أو أكثر" },
   first_name: { type: "string", description: "اسم الشخص نفسه" },
   father_name: { type: "string" },
   grandfather_name: { type: "string" },
   main_branch: { type: "string", enum: ["محمد", "خلف", "سعد", "ناصر"], description: "فقط إذا قال «فرع X» صراحة" },
   lineage_name: { type: "string", description: "«من آل X»: الاسم X" },
   lineage_father: { type: "string", description: "أبو X في «آل X بن Y»" },
-  descendant_of: { type: "integer", description: "row لجد: يحصر البحث في ذريته" },
+  descendant_of: { type: "integer", description: "row لجد: يحصر البحث في ذريته (بدون الجد نفسه)" },
   alive: { type: "boolean" },
   married: { type: "boolean", description: "true = تزوج (حي أو متوفى)" },
   has_children: { type: "boolean" },
@@ -58,7 +68,7 @@ const P_FILTERS = {
 const fn = (name, description, properties, required = []) =>
   ({ type: "function", function: { name, description, parameters: { type: "object", properties, required } } });
 const TOOLS = [
-  fn("find_people", "ابحث عن أشخاص بالمواصفات. يرجع العدد الكلي وأول ١٠.", P_FILTERS),
+  fn("find_people", "ابحث عن أشخاص بالمواصفات. يرجع العدد الكلي (total) وأول ١٠ مرتبين من الأقدم جيلًا. founder_of = هذا الشخص مؤسس فرع.", P_FILTERS),
   fn("get_person", "تفاصيل شخص: نسبه الكامل، حالته، فرعه، أبوه، أبناؤه، عدد ذريته.", { row: { type: "integer" } }, ["row"]),
   fn("count_descendants", "إحصاء ذرية شخص (كل من نزل منه): العدد حسب الحالة وحسب الجيل.", { row: { type: "integer" } }, ["row"]),
   fn("relation", "القرابة بين شخصين: الجد المشترك وكم جيل بينهم.", { row_a: { type: "integer" }, row_b: { type: "integer" } }, ["row_a", "row_b"]),
@@ -78,7 +88,7 @@ function badArgs(name, raw) {
   for (const k of Object.keys(a)) {
     const p = sc.properties[k], v = a[k];
     if (!p) return `حقل غير معروف: ${k}`;
-    if (p.type === "string" && (typeof v !== "string" || !v.trim() || v.length > 40)) return `${k}: نص غير صالح`;
+    if (p.type === "string" && (typeof v !== "string" || !v.trim() || v.length > (k === "nasab" ? 100 : 40))) return `${k}: نص غير صالح`;
     if (p.type === "integer" && (!Number.isInteger(v) || v < 0 || v > (INT_MAX[k] ?? 1e6))) return `${k}: رقم غير صالح`;
     if (p.type === "boolean" && typeof v !== "boolean") return `${k}: لازم true أو false`;
     if (p.enum && !p.enum.includes(v)) return `${k}: قيمة غير مسموحة`;
@@ -186,7 +196,7 @@ async function chat(d, env, origin) {
   try { m = (await r.json()).choices[0].message; } catch { m = null; }
   if (!m || typeof m !== "object") return fail("bad_response");
   const tool_calls = vetCalls(m.tool_calls);
-  const content = typeof m.content === "string" ? m.content.slice(0, 4000) : "";
+  const content = typeof m.content === "string" ? m.content.trim().slice(0, 4000) : "";
   if (!tool_calls && !content.trim()) return fail("bad_response");
   return reply({ ok: true, sess, message: { role: "assistant", content, tool_calls } }, 200, origin);
 }
